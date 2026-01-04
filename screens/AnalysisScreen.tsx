@@ -47,7 +47,8 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
 
   const generateAnalysis = async (transcript: any[], targetRole: string) => {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Fix: Use process.env.API_KEY directly for initialization.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const chatHistory = transcript.map(m => `${m.sender}: ${m.text}`).join('\n');
 
       const prompt = `Act as an expert interview coach. Analyze this transcript for a ${targetRole} role and provide a comprehensive report in JSON format.
@@ -161,16 +162,16 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                   <span className="material-symbols-outlined text-lg">download</span>
                   Save Report
                </button>
-               <button onClick={() => onNavigate(Screen.JDSetup)} className="flex items-center gap-2 px-6 py-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-xl shadow-primary/30 transition-all">
+               <button onClick={() => onNavigate(Screen.JDSetup)} className="flex items-center gap-2 px-6 py-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-xl shadow-primary/20 transition-all">
                   <span className="material-symbols-outlined text-lg">refresh</span>
                   Retry Interview
                </button>
             </div>
          </div>
 
-         <div className="grid grid-cols-12 gap-8 mb-12">
-            {/* Sidebar Cards */}
-            <div className="col-span-12 lg:col-span-4 space-y-8">
+         <div className="grid grid-cols-12 gap-8 mb-12 items-start">
+            {/* Sidebar Cards - Sticky Wrapper */}
+            <div className="col-span-12 lg:col-span-4 space-y-8 sticky top-8">
                {/* Overall Performance Card */}
                <div className="bg-[#161b22] rounded-[48px] border border-white/5 p-12 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 -mt-20 -mr-20 size-64 bg-primary/5 rounded-full blur-[100px]"></div>

@@ -13,8 +13,10 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
   const [jd, setJd] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [experienceLevel, setExperienceLevel] = useState('Senior');
-  const isPro = user?.plan === 'pro';
-  const maxDuration = isPro ? 60 : 15;
+  
+  const isProOrElite = user?.plan === 'pro' || user?.plan === 'elite';
+  const isElite = user?.plan === 'elite';
+  
   const [duration, setDuration] = useState(15);
 
   const handleGenerate = async () => {
@@ -125,26 +127,25 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
                  <div className="flex justify-between items-center">
                     <label className="text-text-secondary text-[10px] font-black uppercase tracking-widest">Target Duration</label>
                     <span className="bg-primary/10 text-primary px-2 py-1 rounded text-[10px] font-black tracking-widest uppercase">
-                       {duration} MIN {duration > 15 && !isPro ? '(LOCKED)' : ''}
+                       {isElite && duration === 90 ? 'UNLIMITED' : `${duration} MIN`} {!isProOrElite && duration > 15 ? '(LOCKED)' : ''}
                     </span>
                  </div>
                  <div className="relative pt-2">
                    <input 
                     type="range" 
-                    className={`w-full h-1.5 bg-background-dark rounded-full appearance-none cursor-pointer accent-primary ${!isPro ? 'opacity-50' : ''}`} 
-                    min="15" max="60" step="15" 
+                    className={`w-full h-1.5 bg-background-dark rounded-full appearance-none cursor-pointer accent-primary ${!isProOrElite ? 'opacity-50' : ''}`} 
+                    min="15" max={isElite ? "90" : "60"} step="15" 
                     value={duration} 
                     onChange={(e) => {
                       const val = parseInt(e.target.value);
-                      if (!isPro && val > 15) {
+                      if (!isProOrElite && val > 15) {
                         setDuration(15);
-                        // Optional: trigger tooltip
                       } else {
                         setDuration(val);
                       }
                     }}
                    />
-                   {!isPro && (
+                   {!isProOrElite && (
                      <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
                            <span className="material-symbols-outlined text-sm">lock</span>

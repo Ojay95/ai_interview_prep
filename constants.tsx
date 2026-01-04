@@ -11,5 +11,6 @@ export const Logo: React.FC<{ className?: string }> = ({ className = "size-9" })
 
 export const PLANS = {
   FREE: 'free',
-  PRO: 'pro'
+  PRO: 'pro',
+  ELITE: 'elite'
 } as const;

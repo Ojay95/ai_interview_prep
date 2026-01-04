@@ -1,5 +1,21 @@
 
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
+
+// ------------------------------------------------------------------
+// CONFIGURATION
+// ------------------------------------------------------------------
+
+// Initialize the client once (Singleton pattern) to improve performance.
+// Use process.env.API_KEY directly as per guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// Use gemini-3-flash-preview for basic text tasks.
+// gemini-1.5-flash is prohibited.
+const MODEL_NAME = 'gemini-3-flash-preview'; 
+
+// ------------------------------------------------------------------
+// AUDIO UTILITIES
+// ------------------------------------------------------------------
 
 // Decode base64 to Uint8Array
 export function decodeBase64(base64: string): Uint8Array {
@@ -20,13 +36,25 @@ export function encodeBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-// Convert float audio to PCM 16-bit
+/**
+ * Convert float audio (Web Audio API standard) to PCM 16-bit.
+ * FIX APPLIED: Prevents overflow crackle when value is exactly 1.0.
+ */
 export function floatTo16BitPCM(data: Float32Array): Uint8Array {
   const l = data.length;
   const int16 = new Int16Array(l);
+  
   for (let i = 0; i < l; i++) {
-    int16[i] = Math.max(-1, Math.min(1, data[i])) * 32768;
+    const sample = data[i];
+    // Clamp values between -1 and 1
+    const clamped = Math.max(-1, Math.min(1, sample));
+    
+    // Scale to 16-bit integer range.
+    // If negative, multiply by 32768. If positive, multiply by 32767.
+    // This prevents writing 32768 into a signed 16-bit integer (which wraps to -32768).
+    int16[i] = clamped < 0 ? clamped * 32768 : clamped * 32767;
   }
+  
   return new Uint8Array(int16.buffer);
 }
 
@@ -44,32 +72,64 @@ export async function decodeAudioData(
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
     for (let i = 0; i < frameCount; i++) {
+      // Normalize Int16 back to Float32 (-1.0 to 1.0)
       channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
     }
   }
   return buffer;
 }
 
+// ------------------------------------------------------------------
+// AI / TEXT UTILITIES
+// ------------------------------------------------------------------
+
 /**
- * Cleans a string that might contain markdown JSON blocks
+ * Cleans a string that might contain markdown JSON blocks.
+ * Helps handle LLM responses that include ```json ... ``` fences.
  */
 export function cleanJsonString(str: string): string {
+  if (!str) return "{}";
   return str.replace(/```json/g, '').replace(/```/g, '').trim();
 }
 
+/**
+ * Analyzes a job description using Google Gemini.
+ * Returns a typed JSON object.
+ */
 export const analyzeJobDescription = async (jd: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Analyze this job description and provide a JSON response with the following fields: 
-    - roleName (string)
-    - keySkills (array of strings)
-    - recommendedFocusAreas (array of strings)
-    - experienceLevel (string: 'Junior', 'Mid-Level', 'Senior', or 'Lead')
-    Job Description: ${jd}`,
-    config: {
-      responseMimeType: 'application/json'
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: `
+        Analyze the following Job Description and provide a pure JSON response.
+        Do not include markdown formatting.
+        
+        Fields required:
+        - roleName (string)
+        - keySkills (array of strings)
+        - recommendedFocusAreas (array of strings)
+        - experienceLevel (string: 'Junior', 'Mid-Level', 'Senior', or 'Lead')
+        
+        Job Description:
+        "${jd}"
+      `,
+      config: {
+        responseMimeType: 'application/json'
+      }
+    });
+
+    // Fix: Access .text property directly as it is a getter, not a method.
+    const textResponse = response.text;
+
+    if (!textResponse) {
+        throw new Error("Empty response from AI model");
     }
-  });
-  return JSON.parse(cleanJsonString(response.text));
+
+    return JSON.parse(cleanJsonString(textResponse));
+    
+  } catch (error) {
+    console.error("Error analyzing job description:", error);
+    // Return a safe fallback or rethrow depending on your app's error handling strategy
+    return { error: "Failed to analyze job description" }; 
+  }
 };

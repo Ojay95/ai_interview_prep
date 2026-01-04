@@ -38,7 +38,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
     setIsFinalizing(true);
     setErrorMsg(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Fix: Use process.env.API_KEY directly for initialization.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const result = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Based on this interview setup conversation, extract the interview configuration in JSON format.
@@ -114,7 +115,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
     setErrorMsg(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Fix: Use process.env.API_KEY directly for initialization.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const history = messages.map(m => ({
         role: m.sender === 'ai' ? 'model' as const : 'user' as const,
         parts: [{ text: m.text }]

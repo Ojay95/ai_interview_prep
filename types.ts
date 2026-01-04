@@ -17,7 +17,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  plan: 'free' | 'pro';
+  plan: 'free' | 'pro' | 'elite';
   avatar?: string;
   interviewsToday?: number;
   lastInterviewDate?: string;
