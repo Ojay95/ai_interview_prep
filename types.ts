@@ -10,7 +10,10 @@ export enum Screen {
   Interview = 'interview',
   Analysis = 'analysis',
   Settings = 'settings',
-  Subscription = 'subscription'
+  Subscription = 'subscription',
+  CVLanding = 'cv-landing',
+  CVAnalysis = 'cv-analysis',
+  CVEditor = 'cv-editor'
 }
 
 export interface User {
@@ -46,4 +49,20 @@ export interface InterviewConfig {
   techStack: string[];
   focusAreas: string[];
   duration: number; // minutes
+}
+
+export interface ResumeData {
+  name: string;
+  role: string;
+  summary: string;
+  experience: {
+    title: string;
+    company: string;
+    period: string;
+    bullets: string[];
+  }[];
+  skills: {
+    category: string;
+    items: string[];
+  }[];
 }

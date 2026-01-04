@@ -12,18 +12,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
   const [interviewsLeft, setInterviewsLeft] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Logic updated to match new plan specifics
   const maxInterviews = user?.plan === 'elite' ? 100 : user?.plan === 'pro' ? 40 : 3;
   const isFree = user?.plan === 'free';
-  const quotaPeriod = isFree ? 'week' : 'month';
 
   useEffect(() => {
-    // Usage tracking based on the new limits
     const usage = JSON.parse(localStorage.getItem(`usage_${user?.id}`) || '{"count": 0, "date": ""}');
-    const today = new Date();
-    
-    // For simplicity in the demo, we use a simple rolling counter reset
-    // In a real app, this would check against the start of the week/month
     setInterviewsLeft(Math.max(0, maxInterviews - usage.count));
   }, [user, maxInterviews]);
 
@@ -97,6 +90,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               <span className="material-symbols-outlined text-[20px]">grid_view</span>
               Dashboard
             </button>
+            <button 
+              onClick={() => { onNavigate(Screen.CVLanding); setIsSidebarOpen(false); }}
+              className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-[20px]">description</span>
+              CV Analysis
+            </button>
             <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium">
               <span className="material-symbols-outlined text-[20px]">history</span>
               History
@@ -104,10 +104,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
             <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium">
               <span className="material-symbols-outlined text-[20px]">analytics</span>
               Analytics
-            </button>
-            <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium">
-              <span className="material-symbols-outlined text-[20px]">person</span>
-              Profile
             </button>
             <button 
               onClick={() => { onNavigate(Screen.Settings); setIsSidebarOpen(false); }}
