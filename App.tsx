@@ -14,6 +14,9 @@ import SubscriptionScreen from './screens/SubscriptionScreen';
 import CVLandingScreen from './screens/CVLandingScreen';
 import CVAnalysisScreen from './screens/CVAnalysisScreen';
 import CVEditorScreen from './screens/CVEditorScreen';
+import PrivacyScreen from './screens/PrivacyScreen';
+import TermsScreen from './screens/TermsScreen';
+import ContactScreen from './screens/ContactScreen';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Landing);
@@ -68,6 +71,12 @@ const App: React.FC = () => {
         return <CVAnalysisScreen user={user} onNavigate={navigate} />;
       case Screen.CVEditor:
         return <CVEditorScreen user={user} onNavigate={navigate} />;
+      case Screen.Privacy:
+        return <PrivacyScreen onNavigate={navigate} />;
+      case Screen.Terms:
+        return <TermsScreen onNavigate={navigate} />;
+      case Screen.Contact:
+        return <ContactScreen onNavigate={navigate} />;
       default:
         return <LandingScreen onNavigate={navigate} />;
     }

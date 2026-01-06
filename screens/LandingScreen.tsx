@@ -10,7 +10,7 @@ interface LandingScreenProps {
 const LandingScreen: React.FC<LandingScreenProps> = ({ onNavigate }) => {
   return (
     <div className="flex flex-col min-h-screen bg-background-dark overflow-x-hidden">
-      <nav className="flex items-center justify-between px-6 lg:px-20 py-6 border-b border-white/5">
+      <nav className="flex items-center justify-between px-6 lg:px-20 py-6 border-b border-white/5 sticky top-0 bg-background-dark/80 backdrop-blur-md z-50">
         <div className="flex items-center gap-3">
           <Logo />
           <span className="text-xl font-bold tracking-tight text-white">MockInterview.ai</span>
@@ -32,8 +32,8 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onNavigate }) => {
       </nav>
 
       <main className="flex-1 flex flex-col lg:flex-row items-center px-6 lg:px-20 py-20 gap-16 relative">
-        <div className="flex-1 flex flex-col gap-8 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-teal-400 text-xs font-medium">
+        <div className="flex-1 flex flex-col gap-8 z-10 text-center lg:text-left">
+          <div className="inline-flex self-center lg:self-start items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-teal-400 text-xs font-medium">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-400"></span>
@@ -46,10 +46,10 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onNavigate }) => {
               interview with AI confidence.
             </span>
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl leading-relaxed">
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
             The world's most advanced voice-driven practice platform. Simulate real interview scenarios and get instant, brutally honest feedback to land your dream job.
           </p>
-          <div className="flex flex-wrap gap-4 mt-4">
+          <div className="flex flex-wrap justify-center lg:justify-start gap-4 mt-4">
             <button 
               onClick={() => onNavigate(Screen.SignUp)}
               className="bg-primary hover:bg-primary-hover px-8 py-4 rounded-2xl text-lg font-bold text-white shadow-xl shadow-primary/30 transition-all transform hover:scale-105"
@@ -60,7 +60,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onNavigate }) => {
               Watch Demo
             </button>
           </div>
-          <div className="flex items-center gap-4 border-t border-white/10 pt-8 mt-4">
+          <div className="flex items-center justify-center lg:justify-start gap-4 border-t border-white/10 pt-8 mt-4">
             <div className="flex -space-x-3">
               {[1, 2, 3].map(i => (
                 <div key={i} className="h-10 w-10 rounded-full border-2 border-background-dark bg-gray-600 flex items-center justify-center text-xs text-white">
@@ -70,7 +70,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onNavigate }) => {
               <div className="h-10 w-10 rounded-full border-2 border-background-dark bg-primary flex items-center justify-center text-[10px] font-bold text-white">+10k</div>
             </div>
             <div>
-              <div className="flex items-center gap-0.5 text-amber-400">
+              <div className="flex items-center justify-center lg:justify-start gap-0.5 text-amber-400">
                 {[1, 2, 3, 4, 5].map(i => <span key={i} className="material-symbols-outlined text-sm">star</span>)}
               </div>
               <span className="text-sm font-medium text-gray-400">Trusted by 10,000+ professionals</span>
@@ -124,15 +124,30 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onNavigate }) => {
         </div>
       </main>
 
-      <footer className="px-6 lg:px-20 py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+      <footer className="px-6 lg:px-20 py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 bg-background-dark/50">
         <div className="flex items-center gap-3 opacity-60">
           <Logo className="size-7" />
           <span className="text-lg font-bold tracking-tight text-white">MockInterview.ai</span>
         </div>
         <div className="flex gap-8 text-sm text-text-secondary">
-          <a href="#" className="hover:text-white transition-colors">Privacy</a>
-          <a href="#" className="hover:text-white transition-colors">Terms</a>
-          <a href="#" className="hover:text-white transition-colors">Contact</a>
+          <button 
+            onClick={() => onNavigate(Screen.Privacy)} 
+            className="hover:text-white transition-colors"
+          >
+            Privacy
+          </button>
+          <button 
+            onClick={() => onNavigate(Screen.Terms)} 
+            className="hover:text-white transition-colors"
+          >
+            Terms
+          </button>
+          <button 
+            onClick={() => onNavigate(Screen.Contact)} 
+            className="hover:text-white transition-colors"
+          >
+            Contact
+          </button>
         </div>
         <div className="text-sm text-text-secondary">
           © 2024 MockInterview.ai. All rights reserved.

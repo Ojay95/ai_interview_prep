@@ -13,7 +13,10 @@ export enum Screen {
   Subscription = 'subscription',
   CVLanding = 'cv-landing',
   CVAnalysis = 'cv-analysis',
-  CVEditor = 'cv-editor'
+  CVEditor = 'cv-editor',
+  Privacy = 'privacy',
+  Terms = 'terms',
+  Contact = 'contact'
 }
 
 export interface User {
