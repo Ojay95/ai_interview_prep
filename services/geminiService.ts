@@ -1,11 +1,8 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize the client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const MODEL_NAME = 'gemini-3-flash-preview'; 
-
-// ... (previous audio utilities remain same)
+// Standardizing on a stable model for background analysis tasks to prevent ProxyUnaryCall errors
+const STABLE_MODEL = 'gemini-flash-latest'; 
 
 export function decodeBase64(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -55,15 +52,22 @@ export async function decodeAudioData(
 
 export function cleanJsonString(str: string): string {
   if (!str) return "{}";
+  // Remove markdown formatting and ensure we only have the JSON object
+  const jsonMatch = str.match(/\{[\s\S]*\}/);
+  if (jsonMatch) return jsonMatch[0];
   return str.replace(/```json/g, '').replace(/```/g, '').trim();
 }
 
 export const analyzeJobDescription = async (jd: string) => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: `Analyze JD: "${jd}". Return JSON: roleName, keySkills[], recommendedFocusAreas[], experienceLevel.`,
-      config: { responseMimeType: 'application/json' }
+      model: STABLE_MODEL,
+      contents: [{ role: 'user', parts: [{ text: `Analyze the following Job Description and return a JSON object with: roleName (string), keySkills (string array), recommendedFocusAreas (string array), experienceLevel (string). \n\nJD: "${jd}"` }] }],
+      config: { 
+        responseMimeType: 'application/json',
+        temperature: 0.1 
+      }
     });
     return JSON.parse(cleanJsonString(response.text));
   } catch (error) {
@@ -72,24 +76,29 @@ export const analyzeJobDescription = async (jd: string) => {
   }
 };
 
-/**
- * NEW: Compares a resume against a job description.
- */
 export const analyzeResumeMatch = async (resumeText: string, jdText: string) => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: `Compare this Resume against this Job Description. 
-      RESUME: ${resumeText}
-      JD: ${jdText}
+      model: STABLE_MODEL,
+      contents: [{ role: 'user', parts: [{ text: `Compare this Resume against this Job Description and return a detailed JSON analysis.
+      
+      RESUME: 
+      ${resumeText}
+      
+      JD: 
+      ${jdText}
       
       Return a JSON object with:
       - matchScore (number 0-100)
-      - matchedKeywords (string[])
-      - missingKeywords (object[] with 'name' and 'type')
+      - matchedKeywords (string array)
+      - missingKeywords (object array with 'name' and 'type')
       - overallFeedback (string)
-      - recommendations (object[] with 'title', 'impact', 'description', 'suggestion')`,
-      config: { responseMimeType: 'application/json' }
+      - recommendations (object array with 'title', 'impact', 'description', 'suggestion')` }] }],
+      config: { 
+        responseMimeType: 'application/json',
+        temperature: 0.2
+      }
     });
     return JSON.parse(cleanJsonString(response.text));
   } catch (error) {

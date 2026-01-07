@@ -39,10 +39,14 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
     setErrorMsg(null);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Using gemini-flash-latest for structured extraction to resolve ProxyUnaryCall 500 errors
       const result = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Based on this interview setup conversation, extract the interview configuration in JSON format.
-        Conversation: ${JSON.stringify(messages)}`,
+        model: 'gemini-flash-latest',
+        contents: [{
+          role: 'user',
+          parts: [{ text: `Based on this interview setup conversation, extract the interview configuration in JSON format.
+          Conversation: ${JSON.stringify(messages)}` }]
+        }],
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
