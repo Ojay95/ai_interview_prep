@@ -20,7 +20,6 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
   const [config, setConfig] = useState<InterviewConfig | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
   const [isWrappingUp, setIsWrappingUp] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -57,7 +56,6 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
           const next = t + 1;
           const limitSeconds = (config?.duration || 15) * 60;
           
-          // Hidden Time Sync
           if (next % 60 === 0 && sessionPromiseRef.current) {
             const remaining = Math.max(0, limitSeconds - next);
             sessionPromiseRef.current.then(s => s.sendRealtimeInput({ 
@@ -129,8 +127,10 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
           inputAudioTranscription: {},
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
           systemInstruction: `You are Sarah, a Lead HR Manager.
-          - INTERRUPTION POLICY: DO NOT interrupt the candidate. Wait for 2+ seconds of silence after they finish before responding.
-          - MONITORING: You can see the candidate via video. Watch for eye contact and confidence.
+          - ULTRA-PATIENCE POLICY: You MUST NOT interrupt the candidate. 
+          - WAIT 3+ SECONDS of absolute silence before you start speaking. 
+          - The candidate might pause to think; if you are unsure, WAIT LONGER.
+          - If the user starts talking while you are talking, STOP IMMEDIATELY (Interruption callback will handle this).
           - ROLE: ${config.role}. 
           - LANGUAGE: ${config.language}.
           - CONTEXT: ${config.customQuestions}`
@@ -187,8 +187,11 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
               if (userTextBuffer.current.trim()) { setTranscript(prev => [...prev, { sender: 'You', text: userTextBuffer.current.trim(), time: timestamp }]); userTextBuffer.current = ""; setLiveUserText(""); }
             }
             if (msg.serverContent?.interrupted) { 
-              for (const s of sourcesRef.current) s.stop(); sourcesRef.current.clear(); nextStartTimeRef.current = 0; 
-              sarahTextBuffer.current = ""; setLiveSarahText("");
+              for (const s of sourcesRef.current) { try { s.stop(); } catch(e) {} } 
+              sourcesRef.current.clear(); 
+              nextStartTimeRef.current = 0; 
+              sarahTextBuffer.current = ""; 
+              setLiveSarahText("");
             }
           }
         }
@@ -311,7 +314,7 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
                       <div className="size-2 bg-green-500 rounded-full animate-pulse"></div>
                       <p className="text-[10px] font-black uppercase">Patience Control Active</p>
                    </div>
-                   <p className="text-[9px] text-text-secondary leading-relaxed italic opacity-40">Sarah is waiting for 2 seconds of silence after your turn before concluding.</p>
+                   <p className="text-[9px] text-text-secondary leading-relaxed italic opacity-40">Sarah is waiting for 3 seconds of silence after your turn before concluding.</p>
                 </div>
              </div>
 

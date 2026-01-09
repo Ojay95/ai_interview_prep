@@ -169,10 +169,10 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column (1/3 Width on Desktop) */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 flex flex-col items-center text-center shadow-xl">
-               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mb-6 opacity-60">Overall Performance</h3>
-               <div className="relative size-44 flex items-center justify-center mb-6">
+          <div className="lg:col-span-4 flex flex-col gap-6 h-full">
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 flex flex-col items-center text-center shadow-xl h-full">
+               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mb-8 opacity-60">Overall Performance</h3>
+               <div className="relative size-44 flex items-center justify-center mb-8">
                   <svg className="size-full transform -rotate-90" viewBox="0 0 100 100">
                      <circle cx="50" cy="50" r="45" fill="none" stroke="#0d111a" strokeWidth="8" />
                      <circle 
@@ -192,11 +192,11 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                      <span className="text-sm font-bold text-text-secondary opacity-40">/ 100</span>
                   </div>
                </div>
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold mb-4">
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold mb-6">
                   <span className="material-symbols-outlined text-sm">emoji_events</span>
                   {analysis?.performanceTag}
                </div>
-               <p className="text-xs text-text-secondary leading-relaxed font-medium italic">
+               <p className="text-xs text-text-secondary leading-relaxed max-w-xs font-medium italic">
                   "{analysis?.summary}"
                </p>
             </div>
@@ -260,7 +260,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                </ul>
             </div>
 
-            {/* Visual & Presence Analysis Card - Full width within its column */}
+            {/* Visual Presence Analysis Card */}
             <div className="md:col-span-2 bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col md:flex-row gap-8 items-center">
                <div className="flex items-center gap-4 shrink-0">
                   <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -295,22 +295,23 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
         <div className="pt-10 border-t border-white/5">
            <h2 className="text-2xl font-black tracking-tight mb-8">Detailed Question Analysis</h2>
            
-           {/* TWO COLUMN GRID ON DESKTOP */}
+           {/* TWO COLUMN GRID ON DESKTOP - Eliminates empty space */}
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {analysis?.detailedAnalysis.map((qa, i) => (
                 <div key={i} className="bg-[#1c212b] rounded-[32px] border border-white/5 overflow-hidden shadow-2xl w-full flex flex-col h-full">
                    <div className="px-8 py-5 bg-black/20 border-b border-white/5 flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                         <div className="size-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-text-secondary">
+                         <div className="size-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-text-secondary shrink-0">
                             Q{i+1}
                          </div>
                          <h3 className="text-sm md:text-base font-bold line-clamp-1">"{qa.question}"</h3>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 whitespace-nowrap ${
+                      <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 whitespace-nowrap shrink-0 ${
                         qa.answerStatus === 'Strong Answer' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
                         qa.answerStatus === 'Average Answer' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
                         'bg-red-500/10 text-red-500 border-red-500/20'
                       }`}>
+                         <span className="size-1 rounded-full bg-current"></span>
                          {qa.answerStatus}
                       </div>
                    </div>
@@ -320,7 +321,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-40">Your Transcript</h4>
-                           <button className="flex items-center gap-2 text-primary text-[9px] font-black uppercase tracking-widest hover:underline">
+                           <button className="flex items-center gap-2 text-primary text-[9px] font-black uppercase tracking-widest hover:underline shrink-0">
                               <span className="material-symbols-outlined text-base">play_circle</span>
                               Play Audio
                            </button>
@@ -332,15 +333,16 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                         </div>
                       </div>
 
-                      {/* AI Coach Suggestion */}
+                      {/* AI Coach Suggestion - Fixed Icon Fragment */}
                       <div className="bg-[#1e2536] rounded-[24px] p-6 space-y-4 border border-primary/10 relative overflow-hidden flex-1">
                         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                            <span className="material-symbols-outlined text-5xl">psychology</span>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                           <div className="size-6 rounded-lg bg-primary flex items-center justify-center text-white">
-                              <span className="material-symbols-outlined text-sm">sparkles</span>
+                           {/* size-8 flex-none prevents fragmentation and clipping */}
+                           <div className="size-8 rounded-lg bg-primary flex flex-none items-center justify-center text-white shadow-lg shadow-primary/20">
+                              <span className="material-symbols-outlined text-sm leading-none">sparkles</span>
                            </div>
                            <h4 className="text-[9px] font-black uppercase tracking-widest">AI Coach Suggestion</h4>
                         </div>
