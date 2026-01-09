@@ -52,6 +52,8 @@ export interface InterviewConfig {
   techStack: string[];
   focusAreas: string[];
   duration: number; // minutes
+  language: string;
+  customQuestions?: string;
 }
 
 export interface ResumeData {
@@ -68,4 +70,14 @@ export interface ResumeData {
     category: string;
     items: string[];
   }[];
+}
+
+/**
+ * Represents visual analysis metrics captured during an interview session.
+ */
+export interface VisualMetrics {
+  eyeContactScore: number;
+  postureScore: number;
+  energyLevel: 'High' | 'Medium' | 'Low';
+  visualFeedback: string;
 }

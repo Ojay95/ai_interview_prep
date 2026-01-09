@@ -11,7 +11,7 @@ interface OnboardingScreenProps {
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate }) => {
   const [messages, setMessages] = useState<{ sender: 'ai' | 'user'; text: string }[]>([
-    { sender: 'ai', text: `Hi ${user?.name}! I'm Sarah, your AI interview coach. To get started, what role are you preparing for?` }
+    { sender: 'ai', text: `Hi ${user?.name}! I'm Sarah, your AI interview coach. To get started, what role are you preparing for and in what language would you like to conduct the interview?` }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -39,9 +39,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
     setErrorMsg(null);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Using gemini-flash-latest for structured extraction to resolve ProxyUnaryCall 500 errors
       const result = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-flash-lite-latest',
         contents: [{
           role: 'user',
           parts: [{ text: `Based on this interview setup conversation, extract the interview configuration in JSON format.
@@ -56,9 +55,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
               experienceLevel: { type: Type.STRING },
               techStack: { type: Type.ARRAY, items: { type: Type.STRING } },
               focusAreas: { type: Type.ARRAY, items: { type: Type.STRING } },
-              duration: { type: Type.NUMBER }
+              duration: { type: Type.NUMBER },
+              language: { type: Type.STRING, description: "The language the interview should be conducted in (default: English)" }
             },
-            required: ['role', 'experienceLevel', 'techStack', 'focusAreas', 'duration']
+            required: ['role', 'experienceLevel', 'techStack', 'focusAreas', 'duration', 'language']
           }
         }
       });
@@ -74,7 +74,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
 
       const config: InterviewConfig = {
         ...configData,
-        duration: finalDuration
+        duration: finalDuration,
+        language: configData.language || 'English',
+        customQuestions: ''
       };
 
       localStorage.setItem('pending_interview_config', JSON.stringify(config));
@@ -93,7 +95,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
         experienceLevel: 'Senior',
         techStack: ['General Skills'],
         focusAreas: ['Core Competencies'],
-        duration: user?.plan === 'elite' ? 60 : user?.plan === 'pro' ? 45 : 10
+        duration: user?.plan === 'elite' ? 60 : user?.plan === 'pro' ? 45 : 10,
+        language: 'English',
+        customQuestions: ''
       };
       localStorage.setItem('pending_interview_config', JSON.stringify(fallback));
       onNavigate(Screen.Interview);
@@ -124,8 +128,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
         contents: contents,
         config: {
           systemInstruction: `You are Sarah, a helpful AI Interview Coach. Help ${user?.name} set up an interview.
-          COLLECT: 1. Role, 2. Experience Level, 3. Skills/Focus, 4. Duration.
+          COLLECT: 1. Role, 2. Experience Level, 3. Skills/Focus, 4. Duration, 5. Language.
           PLAN LIMITS: ${user?.plan === 'elite' ? '60' : user?.plan === 'pro' ? '45' : '10'} minutes max.
+          IMPORTANT: Respond in the language the user is using if they switch to Spanish, French, etc., or confirm their chosen language.
           Once all details are known, end with "Ready to start?" to trigger the button.`
         }
       });
@@ -137,7 +142,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
       if (lowerResp.includes("ready to start") || lowerResp.includes("ready?")) {
         setProgress(100);
       } else {
-        setProgress(prev => Math.min(90, prev + 20));
+        setProgress(prev => Math.min(90, prev + 15));
       }
 
     } catch (err: any) {
@@ -231,10 +236,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
               </h4>
               <div className="space-y-6 flex-1">
                  {[
-                   { label: 'Role Identified', done: progress >= 25 },
-                   { label: 'Level Set', done: progress >= 50 },
-                   { label: 'Focus Areas Defined', done: progress >= 75 },
-                   { label: 'Duration Calibrated', done: progress >= 100 },
+                   { label: 'Role & Language', done: progress >= 25 },
+                   { label: 'Experience Level', done: progress >= 50 },
+                   { label: 'Focus Areas', done: progress >= 75 },
+                   { label: 'Calibration Complete', done: progress >= 100 },
                  ].map((step, i) => (
                    <div key={i} className="flex gap-4">
                       <div className={`size-8 rounded-xl flex items-center justify-center text-[10px] font-black border transition-all duration-500 ${step.done ? 'bg-primary/20 text-primary border-primary/20' : 'bg-black/20 text-text-secondary border-white/5'}`}>

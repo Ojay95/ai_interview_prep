@@ -1,8 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { Screen, User } from '../types';
+import { Screen, User, VisualMetrics } from '../types';
 import { GoogleGenAI } from '@google/genai';
 import { cleanJsonString } from '../services/geminiService';
+import { jsPDF } from 'jspdf';
+import { Logo } from '../constants';
 
 interface DetailedCritique {
   question: string;
@@ -21,6 +23,7 @@ interface AnalysisData {
   growthAreas: string[];
   detailedAnalysis: DetailedCritique[];
   scoreBreakdown: { label: string; value: number }[];
+  visualMetrics: VisualMetrics;
 }
 
 interface AnalysisScreenProps {
@@ -35,9 +38,8 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
 
   useEffect(() => {
     const rawTranscript = localStorage.getItem('last_interview_transcript');
-    const savedRole = localStorage.getItem('last_interview_role') || 'Professional Role';
+    const savedRole = localStorage.getItem('last_interview_role') || 'Junior Frontend Developer';
     setRole(savedRole);
-    
     if (rawTranscript) {
       generateAnalysis(JSON.parse(rawTranscript), savedRole);
     } else {
@@ -49,74 +51,56 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const chatHistory = transcript.map(m => `${m.sender}: ${m.text}`).join('\n');
-
-      const prompt = `Act as an expert interview coach. Analyze this transcript for a ${targetRole} role and provide a comprehensive report in JSON format.
       
-      TRANSCRIPT:
-      ${chatHistory}
-
-      REQUIREMENTS:
-      1. Calculate overallScore (0-100).
-      2. PerformanceTag: e.g. "Excellent", "Good", "Fair".
-      3. detailedAnalysis: For each major question Sarah asked, provide:
-         - question: Sarah's prompt
-         - userTranscript: A summary of what the user actually said
-         - answerStatus: Evaluation tag
-         - critique: Brief constructive feedback
-         - improvedAnswer: A high-tier version using STAR method.
-      
-      JSON SCHEMA:
+      const prompt = `Act as an expert interview coach. Analyze the PROVIDED transcript for a ${targetRole} role.
+      Analyze ONLY the questions and answers that appear in the transcript.
+      Return JSON exactly in this format:
       {
-        "overallScore": number,
-        "performanceTag": "Excellent" | "Good" | "Needs Improvement",
-        "summary": "1-2 sentence overall impression",
-        "keyStrengths": ["Strength 1", "Strength 2", "Strength 3"],
-        "growthAreas": ["Area 1", "Area 2"],
+        "overallScore": number (0-100),
+        "performanceTag": "Excellent" | "Professional" | "Needs Improvement",
+        "summary": "string (1-2 sentence summary)",
+        "keyStrengths": ["string"],
+        "growthAreas": ["string"],
         "scoreBreakdown": [
-          { "label": "Technical Knowledge", "value": number },
-          { "label": "Cultural Fit", "value": number },
-          { "label": "Problem Solving", "value": number },
-          { "label": "Communication Skills", "value": number },
-          { "label": "Confidence & Clarity", "value": number }
+           {"label": "Technical Knowledge", "value": number},
+           {"label": "Cultural Fit", "value": number},
+           {"label": "Problem Solving", "value": number},
+           {"label": "Communication Skills", "value": number},
+           {"label": "Confidence & Clarity", "value": number}
         ],
+        "visualMetrics": {
+           "eyeContactScore": number,
+           "postureScore": number,
+           "energyLevel": "High" | "Medium" | "Low",
+           "visualFeedback": "string"
+        },
         "detailedAnalysis": [
           {
             "question": "string",
             "userTranscript": "string",
-            "answerStatus": "Strong Answer" | "Average Answer" | "Lacks Detail",
+            "answerStatus": "Strong Answer" | "Average Answer" | "Weak" | "Lacks Detail",
             "statusColor": "green" | "amber" | "red",
             "critique": "string",
             "improvedAnswer": "string"
           }
         ]
-      }`;
+      }
 
-      // Using gemini-flash-latest for stable structured extraction to resolve ProxyUnaryCall errors
+      TRANSCRIPT:
+      ---
+      ${chatHistory}
+      ---`;
+
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
-        contents: [{
-          role: 'user',
-          parts: [{ text: prompt }]
-        }],
-        config: { 
-          responseMimeType: 'application/json',
-          temperature: 0.2
-        }
+        model: 'gemini-3-flash-preview',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: { responseMimeType: 'application/json', temperature: 0.1 }
       });
 
       const data = JSON.parse(cleanJsonString(response.text));
       setAnalysis(data);
     } catch (err) {
       console.error(err);
-      setAnalysis({
-        overallScore: 75,
-        performanceTag: "Good",
-        summary: "Solid performance, but technical depth could be improved.",
-        keyStrengths: ["Clear Communication", "Positive Attitude"],
-        growthAreas: ["STAR Method Implementation"],
-        scoreBreakdown: [{label: "Communication", value: 80}],
-        detailedAnalysis: []
-      });
     } finally {
       setIsLoading(false);
     }
@@ -124,256 +108,262 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
 
   const handleDownloadReport = () => {
     if (!analysis) return;
-
-    const date = new Date().toLocaleDateString();
-    let md = `# Interview Analysis Report: ${role}\n`;
-    md += `**Date:** ${date}\n`;
-    md += `**Candidate:** ${user?.name || 'User'}\n\n`;
-    md += `---\n\n`;
-    md += `## 📊 Executive Summary\n`;
-    md += `**Overall Score:** ${analysis.overallScore}/100\n`;
-    md += `**Performance Rating:** ${analysis.performanceTag}\n\n`;
-    md += `> ${analysis.summary}\n\n`;
-    
-    md += `### 📈 Score Breakdown\n`;
-    analysis.scoreBreakdown.forEach(s => {
-      md += `- **${s.label}:** ${s.value}%\n`;
-    });
-    md += `\n---\n\n`;
-
-    md += `## ✅ Key Strengths\n`;
-    analysis.keyStrengths.forEach(s => md += `- ${s}\n`);
-    md += `\n`;
-
-    md += `## 🚀 Areas for Growth\n`;
-    analysis.growthAreas.forEach(g => md += `- ${g}\n`);
-    md += `\n---\n\n`;
-
-    md += `## 🔍 Detailed Question Breakdown\n\n`;
-    analysis.detailedAnalysis.forEach((qa, i) => {
-      md += `### Q${i + 1}: ${qa.question}\n`;
-      md += `**Rating:** ${qa.answerStatus}\n\n`;
-      md += `**Your Answer:**\n_${qa.userTranscript}_\n\n`;
-      md += `**AI Coach Critique:**\n${qa.critique}\n\n`;
-      md += `**Improved Answer (STAR Method):**\n\`\`\`text\n${qa.improvedAnswer}\n\`\`\`\n\n`;
-      md += `---\n\n`;
-    });
-
-    md += `\n*Report generated by MockInterview.ai*`;
-
-    const blob = new Blob([md], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Interview_Report_${role.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text(`Interview Analysis: ${role}`, 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Overall Score: ${analysis.overallScore}/100`, 20, 35);
+    doc.text(analysis.summary, 20, 45, { maxWidth: 170 });
+    doc.save(`Analysis_${role.replace(/\s+/g, '_')}.pdf`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full bg-[#0d1117] flex flex-col items-center justify-center gap-8">
-         <div className="size-20 bg-primary/10 rounded-3xl flex items-center justify-center border border-primary/20">
-            <span className="material-symbols-outlined text-primary text-5xl animate-spin">analytics</span>
-         </div>
-         <h2 className="text-white text-2xl font-black">Generating Your Report...</h2>
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="h-screen w-full bg-[#0f111a] flex flex-col items-center justify-center text-white">
+       <div className="size-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+       <p className="text-sm font-black uppercase tracking-widest animate-pulse">Analyzing Performance...</p>
+    </div>
+  );
 
   if (!analysis) return null;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6 lg:p-12 font-display overflow-y-auto custom-scrollbar">
-      <header className="flex items-center justify-between mb-12 border-b border-white/5 pb-10">
-         <div className="flex items-center gap-3">
-            <div className="size-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-               <span className="material-symbols-outlined text-white">graphic_eq</span>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">AI Mock Interviewer</h1>
-         </div>
-         <nav className="flex items-center gap-8 text-sm font-bold text-text-secondary">
-            <button onClick={() => onNavigate(Screen.Dashboard)}>Dashboard</button>
-            <button onClick={() => onNavigate(Screen.CVLanding)}>CV Analysis</button>
-            <button onClick={() => onNavigate(Screen.Settings)}>Settings</button>
-            <div className="size-10 rounded-full bg-slate-700 border border-white/10 overflow-hidden">
-               <img src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User" />
-            </div>
-         </nav>
-      </header>
+    <div className="min-h-screen bg-[#0f111a] text-white font-display pb-20 overflow-x-hidden">
+      {/* Top Navigation */}
+      <nav className="flex items-center justify-between px-6 lg:px-12 py-4 bg-[#111521] border-b border-white/5 sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <Logo className="size-8" />
+          <span className="text-lg font-bold">AI Mock Interviewer</span>
+        </div>
+        <div className="hidden md:flex items-center gap-8 text-sm font-bold text-text-secondary">
+          <button onClick={() => onNavigate(Screen.Dashboard)} className="hover:text-white transition-all">Dashboard</button>
+          <button onClick={() => onNavigate(Screen.JDSetup)} className="hover:text-white transition-all">Practice</button>
+          <button className="hover:text-white transition-all">History</button>
+          <button className="hover:text-white transition-all">Profile</button>
+          <div className="size-9 rounded-full bg-slate-700 border border-white/10 overflow-hidden">
+            <img src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User" />
+          </div>
+        </div>
+      </nav>
 
-      <div className="max-w-[1400px] mx-auto">
-         <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-12 gap-6">
-            <div>
-               <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] mb-3 opacity-60">Session ID: #{(Math.random()*10000).toFixed(0)} • Completed just now</p>
-               <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter">
-                  Interview Analysis: <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">{role}</span>
-               </h2>
+      <main className="max-w-[1400px] mx-auto px-6 mt-10 space-y-10">
+        {/* Title Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-text-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">
+               <span className="material-symbols-outlined text-sm">calendar_today</span>
+               Session ID: #8392 • Completed just now
             </div>
-            <div className="flex gap-4 w-full md:w-auto">
-               <button 
-                 onClick={handleDownloadReport}
-                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-all active:scale-95"
-               >
-                  <span className="material-symbols-outlined text-lg">download</span>
-                  Save Report
-               </button>
-               <button onClick={() => onNavigate(Screen.JDSetup)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-xl shadow-primary/20 transition-all active:scale-95">
-                  <span className="material-symbols-outlined text-lg">refresh</span>
-                  Retry Interview
-               </button>
-            </div>
-         </div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight">Interview Analysis: {role}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={handleDownloadReport} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-all">
+              <span className="material-symbols-outlined text-lg">download</span> Save Report
+            </button>
+            <button onClick={() => onNavigate(Screen.JDSetup)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all">
+              <span className="material-symbols-outlined text-lg">refresh</span> Retry Interview
+            </button>
+          </div>
+        </div>
 
-         <div className="grid grid-cols-12 gap-8 mb-12 items-start">
-            <div className="col-span-12 lg:col-span-4 space-y-8 sticky top-8">
-               <div className="bg-[#161b22] rounded-[48px] border border-white/5 p-8 md:p-12 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 -mt-20 -mr-20 size-64 bg-primary/5 rounded-full blur-[100px]"></div>
-                  <p className="text-text-secondary text-[10px] font-black uppercase tracking-[0.3em] mb-12 opacity-50">Overall Performance</p>
-                  
-                  <div className="relative size-48 md:size-64 mb-10 flex items-center justify-center">
-                     <svg className="size-full transform -rotate-90" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="45" fill="none" stroke="#0d1117" strokeWidth="6" />
-                        <circle 
-                          cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" strokeWidth="6" 
-                          strokeDasharray="283" 
-                          strokeDashoffset={283 - (283 * analysis.overallScore) / 100} 
-                          strokeLinecap="round" 
-                        />
-                        <defs>
-                          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                             <stop offset="0%" stopColor="#f59e0b" />
-                             <stop offset="100%" stopColor="#ef4444" />
-                          </linearGradient>
-                        </defs>
-                     </svg>
-                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-6xl md:text-8xl font-black text-white tracking-tighter">{analysis.overallScore}</span>
-                        <span className="text-sm font-bold text-text-secondary mt-[-10px]">/ 100</span>
-                     </div>
-                  </div>
-
-                  <div className="mb-10">
-                     <span className="px-5 py-2.5 rounded-full bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-widest border border-orange-500/20">
-                        🏆 {analysis.performanceTag}
-                     </span>
-                  </div>
-                  
-                  <p className="text-gray-400 text-sm md:text-base leading-relaxed font-medium">
-                     "{analysis.summary}"
-                  </p>
-               </div>
-
-               <div className="bg-[#161b22] rounded-[48px] border border-white/5 p-8 md:p-12 shadow-2xl space-y-8">
-                  <div className="flex justify-between items-center mb-4">
-                     <h3 className="text-lg font-bold">Score Breakdown</h3>
-                     <span className="material-symbols-outlined text-text-secondary opacity-40">info</span>
-                  </div>
-                  <div className="space-y-8">
-                     {analysis.scoreBreakdown.map((s, i) => (
-                        <div key={i} className="space-y-4">
-                           <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                              <span className="text-text-secondary">{s.label}</span>
-                              <span className="text-orange-400">{s.value}%</span>
-                           </div>
-                           <div className="h-2 w-full bg-[#0d1117] rounded-full overflow-hidden border border-white/5">
-                              <div className="h-full bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full" style={{ width: `${s.value}%` }}></div>
-                           </div>
-                        </div>
-                     ))}
+        {/* Top Section Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Column (1/3 Width on Desktop) */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 flex flex-col items-center text-center shadow-xl">
+               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mb-6 opacity-60">Overall Performance</h3>
+               <div className="relative size-44 flex items-center justify-center mb-6">
+                  <svg className="size-full transform -rotate-90" viewBox="0 0 100 100">
+                     <circle cx="50" cy="50" r="45" fill="none" stroke="#0d111a" strokeWidth="8" />
+                     <circle 
+                        cx="50" cy="50" r="45" fill="none" stroke="url(#scoreGrad)" strokeWidth="8" 
+                        strokeDasharray="283" strokeDashoffset={283 - (283 * (analysis?.overallScore || 0)) / 100} 
+                        strokeLinecap="round" 
+                     />
+                     <defs>
+                        <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                           <stop offset="0%" stopColor="#f59e0b" />
+                           <stop offset="100%" stopColor="#fbbf24" />
+                        </linearGradient>
+                     </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                     <span className="text-5xl font-black tabular-nums">{analysis?.overallScore}</span>
+                     <span className="text-sm font-bold text-text-secondary opacity-40">/ 100</span>
                   </div>
                </div>
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold mb-4">
+                  <span className="material-symbols-outlined text-sm">emoji_events</span>
+                  {analysis?.performanceTag}
+               </div>
+               <p className="text-xs text-text-secondary leading-relaxed font-medium italic">
+                  "{analysis?.summary}"
+               </p>
             </div>
 
-            <div className="col-span-12 lg:col-span-8 space-y-8">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-[#161b22] rounded-[48px] border border-white/5 p-8 md:p-10 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-10">
-                        <div className="size-12 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center border border-green-500/20">
-                           <span className="material-symbols-outlined">thumb_up</span>
-                        </div>
-                        <h3 className="text-xl font-black tracking-tight">Key Strengths</h3>
-                     </div>
-                     <ul className="space-y-8">
-                        {analysis.keyStrengths.map((s, i) => (
-                           <li key={i} className="flex gap-5 items-start">
-                              <span className="material-symbols-outlined text-green-500 text-xl pt-1">check_circle</span>
-                              <p className="text-gray-300 text-sm leading-relaxed font-medium">{s}</p>
-                           </li>
-                        ))}
-                     </ul>
-                  </div>
-
-                  <div className="bg-[#161b22] rounded-[48px] border border-white/5 p-8 md:p-10 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-10">
-                        <div className="size-12 bg-orange-500/10 text-orange-400 rounded-2xl flex items-center justify-center border border-orange-500/20">
-                           <span className="material-symbols-outlined">trending_up</span>
-                        </div>
-                        <h3 className="text-xl font-black tracking-tight">Areas for Improvement</h3>
-                     </div>
-                     <ul className="space-y-8">
-                        {analysis.growthAreas.map((g, i) => (
-                           <li key={i} className="flex gap-5 items-start">
-                              <span className="material-symbols-outlined text-orange-400 text-xl pt-1">arrow_upward</span>
-                              <p className="text-gray-300 text-sm leading-relaxed font-medium">{g}</p>
-                           </li>
-                        ))}
-                     </ul>
-                  </div>
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl">
+               <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Score Breakdown</h3>
+                  <span className="material-symbols-outlined text-text-secondary text-sm">info</span>
                </div>
-
-               <div className="space-y-10">
-                  <h3 className="text-xl md:text-2xl font-black tracking-tighter flex items-center gap-6">
-                     Detailed Question Analysis
-                     <div className="h-px flex-1 bg-white/5"></div>
-                  </h3>
-
-                  {analysis.detailedAnalysis.map((qa, i) => (
-                     <div key={i} className="bg-[#161b22] rounded-[32px] md:rounded-[48px] border border-white/5 overflow-hidden shadow-2xl">
-                        <header className="p-8 md:p-10 border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                           <div className="flex items-center gap-4 md:gap-6">
-                              <div className="size-10 md:size-12 bg-black/40 rounded-2xl flex items-center justify-center text-text-secondary font-black text-xs border border-white/5 shrink-0">Q{i+1}</div>
-                              <h4 className="text-base md:text-xl font-bold tracking-tight text-white leading-tight">"{qa.question}"</h4>
-                           </div>
-                           <div className={`px-4 md:px-5 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 shrink-0 ${qa.statusColor === 'green' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
-                              <span className="material-symbols-outlined text-xs">star</span>
-                              {qa.answerStatus}
-                           </div>
-                        </header>
-                        
-                        <div className="p-8 md:p-10 space-y-8 md:space-y-10">
-                           <div className="space-y-4">
-                              <div className="flex justify-between items-center">
-                                 <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest opacity-60">Your Transcript</p>
-                              </div>
-                              <div className="p-6 md:p-8 rounded-2xl md:rounded-3xl bg-black/20 border-l-4 border-primary text-gray-400 italic text-sm md:text-base leading-relaxed">
-                                 "{qa.userTranscript || '[No response recorded in transcript]'}"
-                              </div>
-                           </div>
-
-                           <div className="bg-[#1c212b] rounded-[24px] md:rounded-[32px] p-6 md:p-8 border border-white/5 space-y-6">
-                              <div className="flex items-center gap-4">
-                                 <div className="size-10 bg-primary/20 text-primary rounded-2xl flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-xl">smart_toy</span>
-                                 </div>
-                                 <h5 className="font-bold text-sm">AI Coach Suggestion</h5>
-                              </div>
-                              <p className="text-gray-300 text-xs md:text-sm leading-relaxed">
-                                 <span className="text-primary font-bold">Critique:</span> {qa.critique}
-                              </p>
-                              <div className="p-4 md:p-6 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-gray-400 text-xs md:text-sm italic leading-relaxed font-mono">
-                                 {qa.improvedAnswer}
-                              </div>
-                           </div>
-                        </div>
-                     </div>
+               <div className="space-y-6">
+                  {analysis?.scoreBreakdown.map((s, i) => (
+                    <div key={i} className="space-y-2">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-text-secondary">{s.label}</span>
+                          <span className="text-amber-500">{s.value}%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${s.value}%` }}></div>
+                       </div>
+                    </div>
                   ))}
                </div>
             </div>
-         </div>
-      </div>
+          </div>
+
+          {/* Right Column (2/3 Width on Desktop) */}
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            {/* Key Strengths */}
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col">
+               <div className="flex items-center gap-4 mb-6">
+                  <div className="size-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+                     <span className="material-symbols-outlined">thumb_up</span>
+                  </div>
+                  <h3 className="text-sm font-black uppercase tracking-widest">Key Strengths</h3>
+               </div>
+               <ul className="space-y-6 flex-1">
+                  {analysis?.keyStrengths.map((s, i) => (
+                    <li key={i} className="flex gap-4 items-start">
+                       <span className="material-symbols-outlined text-green-500 text-lg shrink-0">check_circle</span>
+                       <p className="text-xs text-text-secondary font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: s.replace(/"(.*?)"/g, '<strong>"$1"</strong>') }} />
+                    </li>
+                  ))}
+               </ul>
+            </div>
+
+            {/* Areas for Improvement */}
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col">
+               <div className="flex items-center gap-4 mb-6">
+                  <div className="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                     <span className="material-symbols-outlined">analytics</span>
+                  </div>
+                  <h3 className="text-sm font-black uppercase tracking-widest">Areas for Improvement</h3>
+               </div>
+               <ul className="space-y-6 flex-1">
+                  {analysis?.growthAreas.map((s, i) => (
+                    <li key={i} className="flex gap-4 items-start">
+                       <span className="material-symbols-outlined text-amber-500 text-lg shrink-0">arrow_upward</span>
+                       <p className="text-xs text-text-secondary font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: s.replace(/"(.*?)"/g, '<strong>"$1"</strong>') }} />
+                    </li>
+                  ))}
+               </ul>
+            </div>
+
+            {/* Visual & Presence Analysis Card - Full width within its column */}
+            <div className="md:col-span-2 bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col md:flex-row gap-8 items-center">
+               <div className="flex items-center gap-4 shrink-0">
+                  <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                     <span className="material-symbols-outlined text-2xl">visibility</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-widest">Visual Presence</h3>
+                    <p className="text-[10px] text-text-secondary font-bold uppercase mt-1">Eye Contact & Posture</p>
+                  </div>
+               </div>
+               <div className="h-px md:h-12 w-full md:w-px bg-white/10"></div>
+               <div className="flex-1 grid grid-cols-3 gap-6 w-full">
+                  <div className="text-center">
+                     <div className="text-xl font-black">{analysis.visualMetrics.eyeContactScore}%</div>
+                     <div className="text-[9px] font-black text-text-secondary uppercase">Eye Contact</div>
+                  </div>
+                  <div className="text-center">
+                     <div className="text-xl font-black">{analysis.visualMetrics.postureScore}%</div>
+                     <div className="text-[9px] font-black text-text-secondary uppercase">Posture</div>
+                  </div>
+                  <div className="text-center">
+                     <div className="text-xl font-black text-primary">{analysis.visualMetrics.energyLevel}</div>
+                     <div className="text-[9px] font-black text-text-secondary uppercase">Energy</div>
+                  </div>
+               </div>
+               <p className="text-[10px] text-text-secondary italic leading-relaxed md:max-w-xs">{analysis.visualMetrics.visualFeedback}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Question Analysis Section */}
+        <div className="pt-10 border-t border-white/5">
+           <h2 className="text-2xl font-black tracking-tight mb-8">Detailed Question Analysis</h2>
+           
+           {/* TWO COLUMN GRID ON DESKTOP */}
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {analysis?.detailedAnalysis.map((qa, i) => (
+                <div key={i} className="bg-[#1c212b] rounded-[32px] border border-white/5 overflow-hidden shadow-2xl w-full flex flex-col h-full">
+                   <div className="px-8 py-5 bg-black/20 border-b border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                         <div className="size-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-text-secondary">
+                            Q{i+1}
+                         </div>
+                         <h3 className="text-sm md:text-base font-bold line-clamp-1">"{qa.question}"</h3>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 whitespace-nowrap ${
+                        qa.answerStatus === 'Strong Answer' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
+                        qa.answerStatus === 'Average Answer' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                        'bg-red-500/10 text-red-500 border-red-500/20'
+                      }`}>
+                         {qa.answerStatus}
+                      </div>
+                   </div>
+
+                   <div className="p-8 space-y-8 flex-1">
+                      {/* Your Transcript */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-40">Your Transcript</h4>
+                           <button className="flex items-center gap-2 text-primary text-[9px] font-black uppercase tracking-widest hover:underline">
+                              <span className="material-symbols-outlined text-base">play_circle</span>
+                              Play Audio
+                           </button>
+                        </div>
+                        <div className="border-l-[3px] border-primary pl-6 py-1">
+                           <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">
+                              "{qa.userTranscript}"
+                           </p>
+                        </div>
+                      </div>
+
+                      {/* AI Coach Suggestion */}
+                      <div className="bg-[#1e2536] rounded-[24px] p-6 space-y-4 border border-primary/10 relative overflow-hidden flex-1">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                           <span className="material-symbols-outlined text-5xl">psychology</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                           <div className="size-6 rounded-lg bg-primary flex items-center justify-center text-white">
+                              <span className="material-symbols-outlined text-sm">sparkles</span>
+                           </div>
+                           <h4 className="text-[9px] font-black uppercase tracking-widest">AI Coach Suggestion</h4>
+                        </div>
+
+                        <div className="space-y-4">
+                           <p className="text-xs text-gray-300 leading-relaxed">
+                              <strong className="text-primary font-black uppercase text-[10px] tracking-wider mr-2">Critique:</strong> 
+                              {qa.critique}
+                           </p>
+                           
+                           <div className="bg-[#161b22] border border-white/5 rounded-2xl p-5 md:p-6 mt-4">
+                              <p className="text-[11px] md:text-xs text-gray-400 leading-relaxed italic">
+                                 "{qa.improvedAnswer}"
+                              </p>
+                           </div>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+      </main>
       <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #3c4253; border-radius: 10px; }`}</style>
     </div>
   );

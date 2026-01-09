@@ -19,9 +19,13 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
   const [liveSarahText, setLiveSarahText] = useState("");
   const [config, setConfig] = useState<InterviewConfig | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
   const [isWrappingUp, setIsWrappingUp] = useState(false);
   
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameIntervalRef = useRef<number | null>(null);
   const inputAudioCtxRef = useRef<AudioContext | null>(null);
   const outputAudioCtxRef = useRef<AudioContext | null>(null);
   const nextStartTimeRef = useRef(0);
@@ -32,6 +36,7 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
 
   const userTextBuffer = useRef("");
   const sarahTextBuffer = useRef("");
+  const transcriptRef = useRef<{ sender: 'Sarah' | 'You'; text: string; time: string }[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('pending_interview_config');
@@ -41,6 +46,10 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
   }, []);
 
   useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+
+  useEffect(() => {
     let interval: any;
     if (isSessionActive && !isPaused) {
       interval = setInterval(() => {
@@ -48,14 +57,16 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
           const next = t + 1;
           const limitSeconds = (config?.duration || 15) * 60;
           
-          if (limitSeconds - next <= 60 && !isWrappingUp) {
-            triggerWrapUp();
+          // Hidden Time Sync
+          if (next % 60 === 0 && sessionPromiseRef.current) {
+            const remaining = Math.max(0, limitSeconds - next);
+            sessionPromiseRef.current.then(s => s.sendRealtimeInput({ 
+              text: `[SYSTEM: ${Math.floor(remaining / 60)} minutes left. Manage pace. Do not respond verbally.]` 
+            }));
           }
 
-          if (next >= limitSeconds) {
-            handleFinish();
-            return t;
-          }
+          if (limitSeconds - next <= 60 && !isWrappingUp) triggerWrapUp();
+          if (next >= limitSeconds) { handleFinish(); return t; }
           return next;
         });
       }, 1000);
@@ -65,10 +76,7 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [transcript, liveUserText, liveSarahText]);
 
@@ -76,25 +84,22 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
     setIsWrappingUp(true);
     sessionPromiseRef.current?.then(session => {
       session.sendRealtimeInput({
-        text: "[SYSTEM: Only 60 seconds remain. Conclude the interview professionally now. Do not start new technical topics. Ask for final questions.]"
+        text: `[SYSTEM: Wrap up now in ${config?.language}. Conclude with final thoughts.]`
       });
     });
   };
 
   const cleanupAll = useCallback(() => {
+    if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
     if (sessionPromiseRef.current) {
-      sessionPromiseRef.current.then(session => {
-        try { session.close(); } catch (e) {}
-      }).catch(() => {});
+      sessionPromiseRef.current.then(session => { try { session.close(); } catch (e) {} });
       sessionPromiseRef.current = null;
     }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop());
       mediaStreamRef.current = null;
     }
-    const closeCtx = (ctx: AudioContext | null) => {
-      if (ctx && ctx.state !== 'closed') ctx.close().catch(() => {});
-    };
+    const closeCtx = (ctx: AudioContext | null) => { if (ctx && ctx.state !== 'closed') ctx.close().catch(() => {}); };
     closeCtx(inputAudioCtxRef.current);
     closeCtx(outputAudioCtxRef.current);
     sourcesRef.current.forEach(s => { try { s.stop(); } catch(e) {} });
@@ -111,25 +116,24 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
       inputAudioCtxRef.current = inCtx;
       outputAudioCtxRef.current = outCtx;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
 
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         config: {
           responseModalities: [Modality.AUDIO],
           outputAudioTranscription: {},
           inputAudioTranscription: {},
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
-          systemInstruction: `You are Sarah, a Lead HR Manager interviewing a candidate for a ${config.role} position.
-          BEHAVIOR:
-          - Sound dynamic and human.
-          - BE PATIENT: Let the candidate finish their full answer.
-          - PACING: Manage this ${config.duration} minute session.
-          - ROLE: ${config.role} (${config.experienceLevel} level).
-          - FOCUS: ${config.focusAreas.join(', ')}.`
+          systemInstruction: `You are Sarah, a Lead HR Manager.
+          - INTERRUPTION POLICY: DO NOT interrupt the candidate. Wait for 2+ seconds of silence after they finish before responding.
+          - MONITORING: You can see the candidate via video. Watch for eye contact and confidence.
+          - ROLE: ${config.role}. 
+          - LANGUAGE: ${config.language}.
+          - CONTEXT: ${config.customQuestions}`
         },
         callbacks: {
           onopen: () => {
@@ -142,6 +146,18 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
             };
             source.connect(processor);
             processor.connect(inCtx.destination);
+
+            frameIntervalRef.current = window.setInterval(() => {
+              if (isPaused || isCameraOff || !videoRef.current || !canvasRef.current) return;
+              const ctx = canvasRef.current.getContext('2d');
+              if (!ctx) return;
+              canvasRef.current.width = 320;
+              canvasRef.current.height = 240;
+              ctx.drawImage(videoRef.current, 0, 0, 320, 240);
+              const base64 = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
+              sessionPromise.then(s => s.sendRealtimeInput({ media: { data: base64, mimeType: 'image/jpeg' } }));
+            }, 2000);
+
             setIsSessionActive(true);
           },
           onmessage: async (msg: LiveServerMessage) => {
@@ -157,35 +173,22 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
               sourcesRef.current.add(source);
               source.onended = () => sourcesRef.current.delete(source);
             }
-
-            if (msg.serverContent?.outputTranscription) {
-              sarahTextBuffer.current += msg.serverContent.outputTranscription.text;
-              setLiveSarahText(sarahTextBuffer.current);
+            if (msg.serverContent?.outputTranscription) { 
+              sarahTextBuffer.current += msg.serverContent.outputTranscription.text; 
+              setLiveSarahText(sarahTextBuffer.current); 
             }
-            if (msg.serverContent?.inputTranscription) {
-              userTextBuffer.current += msg.serverContent.inputTranscription.text;
-              setLiveUserText(userTextBuffer.current);
+            if (msg.serverContent?.inputTranscription) { 
+              userTextBuffer.current += msg.serverContent.inputTranscription.text; 
+              setLiveUserText(userTextBuffer.current); 
             }
             if (msg.serverContent?.turnComplete) {
               const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const updates: any[] = [];
-              if (sarahTextBuffer.current.trim()) {
-                updates.push({ sender: 'Sarah', text: sarahTextBuffer.current.trim(), time: timestamp });
-                sarahTextBuffer.current = "";
-                setLiveSarahText("");
-                setCurrentQuestionIndex(prev => Math.min(prev + 1, 8));
-              }
-              if (userTextBuffer.current.trim()) {
-                updates.push({ sender: 'You', text: userTextBuffer.current.trim(), time: timestamp });
-                userTextBuffer.current = "";
-                setLiveUserText("");
-              }
-              if (updates.length > 0) setTranscript(prev => [...prev, ...updates]);
+              if (sarahTextBuffer.current.trim()) { setTranscript(prev => [...prev, { sender: 'Sarah', text: sarahTextBuffer.current.trim(), time: timestamp }]); sarahTextBuffer.current = ""; setLiveSarahText(""); }
+              if (userTextBuffer.current.trim()) { setTranscript(prev => [...prev, { sender: 'You', text: userTextBuffer.current.trim(), time: timestamp }]); userTextBuffer.current = ""; setLiveUserText(""); }
             }
-            if (msg.serverContent?.interrupted) {
-              for (const s of sourcesRef.current) s.stop();
-              sourcesRef.current.clear();
-              nextStartTimeRef.current = 0;
+            if (msg.serverContent?.interrupted) { 
+              for (const s of sourcesRef.current) s.stop(); sourcesRef.current.clear(); nextStartTimeRef.current = 0; 
+              sarahTextBuffer.current = ""; setLiveSarahText("");
             }
           }
         }
@@ -200,8 +203,8 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
   };
 
   const handleFinish = () => {
-    const finalTranscript = [...transcript];
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let finalTranscript = [...transcriptRef.current];
     if (sarahTextBuffer.current.trim()) finalTranscript.push({ sender: 'Sarah', text: sarahTextBuffer.current.trim(), time: timestamp });
     if (userTextBuffer.current.trim()) finalTranscript.push({ sender: 'You', text: userTextBuffer.current.trim(), time: timestamp });
     localStorage.setItem('last_interview_transcript', JSON.stringify(finalTranscript));
@@ -220,110 +223,65 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
             <div className="size-6 md:size-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="material-symbols-outlined text-white text-base md:text-xl">graphic_eq</span>
             </div>
-            <span className="text-sm md:text-lg font-bold tracking-tight">AI Interviewer</span>
+            <span className="text-sm md:text-lg font-bold tracking-tight">MockInterview.ai</span>
           </div>
           <div className="hidden md:block h-4 w-px bg-white/10 mx-2"></div>
           <div className="hidden md:flex items-center gap-3 text-xs font-medium text-text-secondary">
-             <span>Mock Interview</span>
+             <span>{config?.role}</span>
              <span className="opacity-20">/</span>
-             <span className="text-white">Live</span>
+             <span className="text-white">{config?.language}</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-[10px] md:text-xs font-black text-primary tabular-nums bg-primary/10 px-3 py-1 rounded-full border border-primary/20">{formatTime(timer)}</div>
-          <div className="size-8 rounded-full border border-white/10 overflow-hidden bg-slate-700 shrink-0">
+          <div className="size-8 rounded-full border border-white/10 overflow-hidden bg-slate-700">
              <img src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User" />
           </div>
         </div>
       </nav>
 
       {!isSessionActive ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8 animate-in fade-in duration-500">
-           <div className="size-20 md:size-24 bg-primary/10 rounded-[32px] flex items-center justify-center border border-primary/20">
-              <span className={`material-symbols-outlined text-4xl md:text-5xl text-primary ${isConnecting ? 'animate-spin' : ''}`}>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
+           <div className="size-24 bg-primary/10 rounded-[32px] flex items-center justify-center border border-primary/20">
+              <span className={`material-symbols-outlined text-5xl text-primary ${isConnecting ? 'animate-spin' : ''}`}>
                  {isConnecting ? 'sync' : 'mic'}
               </span>
            </div>
            <div className="text-center space-y-2">
-              <h2 className="text-2xl md:text-3xl font-black">Sarah is waiting</h2>
-              <p className="text-sm text-text-secondary max-w-xs md:max-w-md">Ready to evaluate your performance for {config?.role}</p>
+              <h2 className="text-3xl font-black">Sarah is ready</h2>
+              <p className="text-sm text-text-secondary max-w-xs">Waiting for your entrance.</p>
            </div>
-           <button onClick={handleJoinSession} disabled={isConnecting} className="w-full max-w-xs px-10 py-4 bg-primary rounded-2xl font-bold hover:bg-primary-hover shadow-xl shadow-primary/30 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest text-xs">
-              {isConnecting ? 'Connecting...' : 'Enter Session'}
+           <button onClick={handleJoinSession} disabled={isConnecting} className="w-full max-w-xs px-10 py-4 bg-primary rounded-2xl font-bold shadow-xl shadow-primary/30 transition-all uppercase tracking-widest text-xs">
+              {isConnecting ? 'Preparing...' : 'Start Interview'}
            </button>
         </div>
       ) : (
         <main className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 overflow-hidden min-h-0">
-          {/* Persona and Stats - On mobile this might be smaller or hidden */}
-          <section className="lg:col-span-3 flex lg:flex-col gap-4 md:gap-6 shrink-0 overflow-x-auto lg:overflow-visible no-scrollbar pb-2 lg:pb-0">
-             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[200px] lg:min-w-0 flex-1">
-                <div className="aspect-[4/3] lg:aspect-[4/5] relative">
-                   <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600&h=750" alt="Sarah" className="w-full h-full object-cover grayscale brightness-75" />
-                   <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-1 md:px-3 md:py-1.5 rounded-full flex items-center gap-2 border border-white/10">
-                      <div className="size-1.5 md:size-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]"></div>
-                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Listening</span>
-                   </div>
-                   <div className="absolute bottom-3 left-3 md:bottom-6 md:left-6">
-                      <h2 className="text-lg md:text-2xl font-black tracking-tight leading-tight">Sarah</h2>
-                      <p className="text-text-secondary text-[10px] md:text-xs font-bold mt-1">Lead HR Manager</p>
-                   </div>
-                </div>
+          <section className="lg:col-span-3 flex lg:flex-col gap-4 md:gap-6 shrink-0 overflow-x-auto lg:overflow-visible no-scrollbar">
+             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[280px] lg:min-w-0">
+                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover aspect-[4/3] lg:aspect-[4/5] ${isCameraOff ? 'hidden' : ''}`} />
+                {isCameraOff && <div className="aspect-[4/3] lg:aspect-[4/5] bg-black/40 flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-text-secondary">videocam_off</span></div>}
              </div>
-             <div className="hidden lg:flex flex-col bg-[#1c212b] rounded-2xl border border-white/5 p-6 space-y-6">
-                <div className="space-y-2">
-                   <div className="flex items-center gap-2 text-[10px] font-black text-text-secondary uppercase tracking-widest opacity-60">
-                      <span className="material-symbols-outlined text-sm">psychology</span> Style
-                   </div>
-                   <p className="text-sm font-bold">Behavioral & Technical</p>
-                </div>
-                <div className="space-y-2">
-                   <div className="flex items-center gap-2 text-[10px] font-black text-text-secondary uppercase tracking-widest opacity-60">
-                      <span className="material-symbols-outlined text-sm">speed</span> Pacing
-                   </div>
-                   <p className="text-sm font-bold">Moderate, probing</p>
-                </div>
-             </div>
-             <div className="lg:hidden flex flex-col bg-[#1c212b] rounded-2xl border border-white/5 p-4 min-w-[150px] justify-center items-center">
-                <div className="text-[10px] font-black text-text-secondary uppercase tracking-widest opacity-60 mb-1">Focus</div>
-                <div className="text-xs font-bold text-primary">Q{currentQuestionIndex} / 8</div>
+             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[280px] lg:min-w-0">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600&h=750" alt="Sarah" className="w-full h-full object-cover grayscale brightness-75 aspect-[4/3] lg:aspect-[4/5]" />
+                <div className="absolute bottom-6 left-6 text-white"><h2 className="text-lg md:text-2xl font-black">Sarah</h2></div>
              </div>
           </section>
 
-          {/* Chat Window */}
           <section className="lg:col-span-6 flex flex-col bg-[#1c212b] rounded-2xl md:rounded-[32px] border border-white/5 shadow-2xl overflow-hidden relative min-h-0 flex-1">
-             <div className="h-10 md:h-14 flex items-center justify-center border-b border-white/5 bg-black/20 shrink-0">
-                <span className="text-[8px] md:text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] opacity-40">Session Active</span>
-             </div>
              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 md:space-y-12 custom-scrollbar">
-                {transcript.length === 0 && !liveSarahText && !liveUserText && (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4 opacity-30">
-                     <span className="material-symbols-outlined text-4xl">chat_bubble</span>
-                     <p className="text-sm font-medium">Interview has started. Sarah will begin momentarily...</p>
-                  </div>
-                )}
                 {transcript.map((m, i) => (
-                   <div key={i} className={`flex items-start gap-3 md:gap-4 ${m.sender === 'You' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                      <div className={`size-8 md:size-10 rounded-full overflow-hidden shrink-0 border border-white/10 ${m.sender === 'You' ? 'bg-[#d2b48c]' : ''}`}>
-                         {m.sender === 'Sarah' ? <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="Sarah" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white uppercase">{user?.name?.slice(0, 1)}</div>}
-                      </div>
-                      <div className={`flex flex-col gap-1 md:gap-2 ${m.sender === 'You' ? 'items-end' : ''}`}>
-                         <div className="flex items-center gap-2 text-[8px] md:text-[10px] font-black text-text-secondary/60 uppercase tracking-widest">
-                            {m.sender} <span className="opacity-40">{m.time}</span>
-                         </div>
-                         <div className={`p-4 md:p-6 rounded-2xl max-w-[85vw] md:max-w-[450px] text-sm md:text-base leading-relaxed ${m.sender === 'Sarah' ? 'bg-white/5 text-gray-200 rounded-tl-none border border-white/5' : 'bg-[#1e273d] text-gray-200 rounded-tr-none border border-white/10 shadow-lg'}`}>
-                            {m.text}
-                         </div>
+                   <div key={i} className={`flex items-start gap-3 md:gap-4 ${m.sender === 'You' ? 'flex-row-reverse' : ''} animate-in fade-in duration-300`}>
+                      <div className={`p-4 md:p-6 rounded-2xl max-w-[85vw] md:max-w-[450px] text-sm md:text-base leading-relaxed ${m.sender === 'Sarah' ? 'bg-white/5 text-gray-200' : 'bg-primary/20 text-white shadow-lg'}`}>
+                         {m.text}
                       </div>
                    </div>
                 ))}
                 {(liveSarahText || liveUserText) && (
                    <div className={`flex items-start gap-3 md:gap-4 ${liveUserText ? 'flex-row-reverse' : ''} animate-in fade-in duration-200`}>
-                      <div className={`size-8 md:size-10 rounded-full overflow-hidden shrink-0 border border-white/10 ${liveUserText ? 'bg-[#d2b48c]' : ''}`}>
-                        {liveSarahText ? <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="Sarah" className="w-full h-full object-cover rounded-full" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white uppercase">{user?.name?.slice(0, 1)}</div>}
-                      </div>
-                      <div className={`p-4 md:p-6 rounded-2xl max-w-[85vw] md:max-w-[450px] italic opacity-60 text-sm md:text-base shadow-xl ${liveUserText ? 'bg-[#1e273d] rounded-tr-none border border-white/10' : 'bg-white/5 rounded-tl-none border border-white/5'}`}>
+                      <div className={`p-4 md:p-6 rounded-2xl max-w-[85vw] md:max-w-[450px] italic opacity-60 text-sm md:text-base shadow-xl ${liveUserText ? 'bg-primary/10' : 'bg-white/5'}`}>
                          {liveSarahText || liveUserText}
-                         <span className="inline-block w-1 h-3 md:h-4 bg-primary animate-blink ml-1 align-middle"></span>
+                         <span className="inline-block w-1 h-4 bg-primary animate-blink ml-1 align-middle"></span>
                       </div>
                    </div>
                 )}
@@ -333,64 +291,51 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
                    <span className="material-symbols-outlined text-base md:text-xl">{isMuted ? 'mic_off' : 'mic'}</span>
                 </div>
                 <div className="flex-1 flex items-center gap-1 h-6 md:h-10 justify-center">
-                   {[...Array(window.innerWidth < 768 ? 15 : 30)].map((_, i) => (
-                      <div key={i} className={`w-0.5 md:w-1 bg-primary rounded-full transition-all duration-300 ${!isMuted && !isPaused ? 'animate-pulse' : 'h-1'}`} style={{ height: !isMuted && !isPaused ? `${30 + Math.random() * 70}%` : '2px', animationDelay: `${i * 0.04}s` }}></div>
+                   {[...Array(30)].map((_, i) => (
+                      <div key={i} className={`w-1 bg-primary rounded-full transition-all duration-300 ${!isMuted && !isPaused ? 'animate-pulse' : 'h-1'}`} style={{ height: !isMuted && !isPaused ? `${30 + Math.random() * 70}%` : '2px', animationDelay: `${i * 0.04}s` }}></div>
                    ))}
                 </div>
-                <div className="hidden sm:block text-[9px] md:text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60 w-24 text-right">{isPaused ? 'Paused' : isMuted ? 'Muted' : 'Listening...'}</div>
+                <div className="hidden sm:block text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60 w-24 text-right">{isPaused ? 'Paused' : isMuted ? 'Muted' : 'Listening...'}</div>
              </div>
           </section>
 
-          {/* Controls and Focus */}
           <section className="lg:col-span-3 flex lg:flex-col gap-4 md:gap-6 shrink-0">
              <div className="hidden lg:flex bg-[#1c212b] rounded-3xl border border-white/5 p-8 flex-col items-center shadow-2xl">
-                <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-4 opacity-60">Timer</h3>
                 <div className="text-6xl font-black tracking-tighter tabular-nums mb-2 font-mono text-primary">{formatTime(timer)}</div>
-                <div className="text-[10px] font-bold text-text-secondary opacity-40">/ {config?.duration || 15}:00 min</div>
+                <div className="text-[10px] font-bold text-text-secondary opacity-40">Target: {config?.duration || 15}m</div>
              </div>
              
              <div className="flex-1 bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 p-4 md:p-8 flex flex-col shadow-2xl overflow-hidden min-h-0">
-                <div className="flex justify-between items-center mb-4 md:mb-6">
-                   <h3 className="text-[10px] md:text-sm font-black uppercase tracking-widest text-white">Focus</h3>
-                   <div className="px-2 py-0.5 bg-primary/20 text-primary text-[8px] md:text-[10px] font-black rounded border border-primary/20">Q{currentQuestionIndex} / 8</div>
-                </div>
-                <div className="space-y-4 md:space-y-6">
-                   <div className="p-3 md:p-6 rounded-xl md:rounded-2xl bg-black/20 border-l-2 md:border-l-4 border-primary space-y-2 md:space-y-4 shadow-xl">
-                      <p className="text-[10px] md:text-sm font-bold text-gray-200 leading-relaxed italic">
-                        "{isWrappingUp ? 'Concluding the session...' : 'Sarah is evaluating your core competencies...'}"
-                      </p>
-                      <div className="flex flex-wrap gap-1 md:gap-2">
-                         {config?.focusAreas.slice(0, 2).map((area, i) => (
-                           <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[7px] md:text-[9px] font-black uppercase tracking-widest text-text-secondary truncate">{area}</span>
-                         ))}
-                      </div>
+                <div className="space-y-4">
+                   <div className="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center gap-3">
+                      <div className="size-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <p className="text-[10px] font-black uppercase">Patience Control Active</p>
                    </div>
+                   <p className="text-[9px] text-text-secondary leading-relaxed italic opacity-40">Sarah is waiting for 2 seconds of silence after your turn before concluding.</p>
                 </div>
              </div>
 
-             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 p-3 md:p-4 flex items-center justify-between shadow-2xl shrink-0 gap-2">
-                <button onClick={() => setIsMuted(!isMuted)} className={`flex flex-col items-center gap-1 group transition-all flex-1 ${isMuted ? 'text-red-500' : 'text-text-secondary hover:text-white'}`}>
-                   <div className={`size-8 md:size-10 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10 group-hover:bg-white/10'}`}>
-                      <span className="material-symbols-outlined text-base md:text-lg">{isMuted ? 'mic_off' : 'mic'}</span>
+             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 p-4 flex items-center justify-between shadow-2xl shrink-0 gap-2">
+                <button onClick={() => setIsMuted(!isMuted)} className={`flex flex-col items-center gap-1 flex-1 ${isMuted ? 'text-red-500' : 'text-text-secondary hover:text-white'}`}>
+                   <div className={`size-10 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'}`}>
+                      <span className="material-symbols-outlined text-lg">{isMuted ? 'mic_off' : 'mic'}</span>
                    </div>
-                   <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Mute</span>
                 </button>
-                <button onClick={() => setIsPaused(!isPaused)} className={`flex flex-col items-center gap-1 group transition-all flex-1 ${isPaused ? 'text-primary' : 'text-text-secondary hover:text-white'}`}>
-                   <div className={`size-8 md:size-10 rounded-full flex items-center justify-center transition-all ${isPaused ? 'bg-primary/10 border-primary/20' : 'bg-white/5 border-white/10 group-hover:bg-white/10'}`}>
-                      <span className="material-symbols-outlined text-base md:text-lg">{isPaused ? 'play_arrow' : 'pause'}</span>
+                <button onClick={() => setIsPaused(!isPaused)} className={`flex flex-col items-center gap-1 flex-1 ${isPaused ? 'text-primary' : 'text-text-secondary hover:text-white'}`}>
+                   <div className={`size-10 rounded-full flex items-center justify-center transition-all ${isPaused ? 'bg-primary/10 border-primary/20' : 'bg-white/5 border-white/10'}`}>
+                      <span className="material-symbols-outlined text-lg">{isPaused ? 'play_arrow' : 'pause'}</span>
                    </div>
-                   <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">{isPaused ? 'Resume' : 'Pause'}</span>
                 </button>
-                <button onClick={handleFinish} className="flex flex-col items-center gap-1 group text-text-secondary hover:text-red-500 transition-all flex-1">
-                   <div className="size-8 md:size-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center group-hover:bg-red-500/20 transition-all shadow-lg">
-                      <span className="material-symbols-outlined text-base md:text-lg">call_end</span>
+                <button onClick={handleFinish} className="flex flex-col items-center gap-1 text-text-secondary hover:text-red-500 transition-all flex-1">
+                   <div className="size-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-lg">call_end</span>
                    </div>
-                   <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">End</span>
                 </button>
              </div>
           </section>
         </main>
       )}
+      <canvas ref={canvasRef} className="hidden" />
       <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #3c4253; border-radius: 10px; }`}</style>
     </div>
   );
