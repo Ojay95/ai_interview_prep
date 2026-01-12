@@ -59,7 +59,7 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
           if (next % 60 === 0 && sessionPromiseRef.current) {
             const remaining = Math.max(0, limitSeconds - next);
             sessionPromiseRef.current.then(s => s.sendRealtimeInput({ 
-              text: `[SYSTEM: ${Math.floor(remaining / 60)} minutes left. Manage pace. Do not respond verbally.]` 
+              text: `[SYSTEM: ${Math.floor(remaining / 60)} minutes left. Do not respond verbally.]` 
             }));
           }
 
@@ -127,13 +127,12 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
           inputAudioTranscription: {},
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
           systemInstruction: `You are Sarah, a Lead HR Manager.
-          - ULTRA-PATIENCE POLICY: You MUST NOT interrupt the candidate. 
-          - WAIT 3+ SECONDS of absolute silence before you start speaking. 
-          - The candidate might pause to think; if you are unsure, WAIT LONGER.
-          - If the user starts talking while you are talking, STOP IMMEDIATELY (Interruption callback will handle this).
-          - ROLE: ${config.role}. 
-          - LANGUAGE: ${config.language}.
-          - CONTEXT: ${config.customQuestions}`
+          STRICT PATIENCE MANDATE: 
+          1. NEVER interrupt the candidate. 
+          2. WAIT FOR AT LEAST 3 SECONDS of clear silence after the candidate stops speaking before you start your turn.
+          3. If the candidate is pausing to think, wait even longer. Assume they have more to say unless they explicitly finish.
+          4. ROLE: ${config.role}. 
+          5. CONTEXT: ${config.customQuestions || 'Conduct a professional interview.'}`
         },
         callbacks: {
           onopen: () => {
@@ -183,8 +182,16 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
             }
             if (msg.serverContent?.turnComplete) {
               const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              if (sarahTextBuffer.current.trim()) { setTranscript(prev => [...prev, { sender: 'Sarah', text: sarahTextBuffer.current.trim(), time: timestamp }]); sarahTextBuffer.current = ""; setLiveSarahText(""); }
-              if (userTextBuffer.current.trim()) { setTranscript(prev => [...prev, { sender: 'You', text: userTextBuffer.current.trim(), time: timestamp }]); userTextBuffer.current = ""; setLiveUserText(""); }
+              if (sarahTextBuffer.current.trim()) { 
+                setTranscript(prev => [...prev, { sender: 'Sarah', text: sarahTextBuffer.current.trim(), time: timestamp }]); 
+                sarahTextBuffer.current = ""; 
+                setLiveSarahText(""); 
+              }
+              if (userTextBuffer.current.trim()) { 
+                setTranscript(prev => [...prev, { sender: 'You', text: userTextBuffer.current.trim(), time: timestamp }]); 
+                userTextBuffer.current = ""; 
+                setLiveUserText(""); 
+              }
             }
             if (msg.serverContent?.interrupted) { 
               for (const s of sourcesRef.current) { try { s.stop(); } catch(e) {} } 
@@ -220,23 +227,23 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
 
   return (
     <div className="flex flex-col h-screen bg-[#0f121a] text-white overflow-hidden font-display">
-      <nav className="flex items-center justify-between px-4 md:px-8 py-3 bg-[#161b22]/90 border-b border-white/5 shrink-0 z-50">
-        <div className="flex items-center gap-3 md:gap-6">
+      <nav className="flex items-center justify-between px-8 py-3 bg-[#161b22]/90 border-b border-white/5 shrink-0 z-50">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="size-6 md:size-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-base md:text-xl">graphic_eq</span>
+            <div className="size-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="material-symbols-outlined text-white text-xl">graphic_eq</span>
             </div>
-            <span className="text-sm md:text-lg font-bold tracking-tight">MockInterview.ai</span>
+            <span className="text-lg font-bold tracking-tight">MockInterview.ai</span>
           </div>
-          <div className="hidden md:block h-4 w-px bg-white/10 mx-2"></div>
-          <div className="hidden md:flex items-center gap-3 text-xs font-medium text-text-secondary">
+          <div className="h-4 w-px bg-white/10 mx-2"></div>
+          <div className="flex items-center gap-3 text-xs font-medium text-text-secondary">
              <span>{config?.role}</span>
              <span className="opacity-20">/</span>
              <span className="text-white">{config?.language}</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-[10px] md:text-xs font-black text-primary tabular-nums bg-primary/10 px-3 py-1 rounded-full border border-primary/20">{formatTime(timer)}</div>
+          <div className="text-xs font-black text-primary tabular-nums bg-primary/10 px-3 py-1 rounded-full border border-primary/20">{formatTime(timer)}</div>
           <div className="size-8 rounded-full border border-white/10 overflow-hidden bg-slate-700">
              <img src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User" />
           </div>
@@ -259,41 +266,41 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
            </button>
         </div>
       ) : (
-        <main className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 overflow-hidden min-h-0">
-          <section className="lg:col-span-3 flex lg:flex-col gap-4 md:gap-6 shrink-0 overflow-x-auto lg:overflow-visible no-scrollbar">
-             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[280px] lg:min-w-0">
-                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover aspect-[4/3] lg:aspect-[4/5] ${isCameraOff ? 'hidden' : ''}`} />
-                {isCameraOff && <div className="aspect-[4/3] lg:aspect-[4/5] bg-black/40 flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-text-secondary">videocam_off</span></div>}
+        <main className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-6 p-6 overflow-hidden min-h-0">
+          <section className="lg:col-span-3 flex lg:flex-col gap-6 shrink-0 overflow-x-auto lg:overflow-visible no-scrollbar">
+             <div className="bg-[#1c212b] rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[280px] lg:min-w-0">
+                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover aspect-[4/5] ${isCameraOff ? 'hidden' : ''}`} />
+                {isCameraOff && <div className="aspect-[4/5] bg-black/40 flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-text-secondary">videocam_off</span></div>}
              </div>
-             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[280px] lg:min-w-0">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600&h=750" alt="Sarah" className="w-full h-full object-cover grayscale brightness-75 aspect-[4/3] lg:aspect-[4/5]" />
-                <div className="absolute bottom-6 left-6 text-white"><h2 className="text-lg md:text-2xl font-black">Sarah</h2></div>
+             <div className="bg-[#1c212b] rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative min-w-[280px] lg:min-w-0">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600&h=750" alt="Sarah" className="w-full h-full object-cover grayscale brightness-75 aspect-[4/5]" />
+                <div className="absolute bottom-6 left-6 text-white"><h2 className="text-2xl font-black">Sarah</h2></div>
              </div>
           </section>
 
-          <section className="lg:col-span-6 flex flex-col bg-[#1c212b] rounded-2xl md:rounded-[32px] border border-white/5 shadow-2xl overflow-hidden relative min-h-0 flex-1">
-             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 md:space-y-12 custom-scrollbar">
+          <section className="lg:col-span-6 flex flex-col bg-[#1c212b] rounded-[32px] border border-white/5 shadow-2xl overflow-hidden relative min-h-0">
+             <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-12 custom-scrollbar">
                 {transcript.map((m, i) => (
-                   <div key={i} className={`flex items-start gap-3 md:gap-4 ${m.sender === 'You' ? 'flex-row-reverse' : ''} animate-in fade-in duration-300`}>
-                      <div className={`p-4 md:p-6 rounded-2xl max-w-[85vw] md:max-w-[450px] text-sm md:text-base leading-relaxed ${m.sender === 'Sarah' ? 'bg-white/5 text-gray-200' : 'bg-primary/20 text-white shadow-lg'}`}>
+                   <div key={i} className={`flex items-start gap-4 ${m.sender === 'You' ? 'flex-row-reverse' : ''} animate-in fade-in duration-300`}>
+                      <div className={`p-6 rounded-2xl max-w-[450px] text-base leading-relaxed ${m.sender === 'Sarah' ? 'bg-white/5 text-gray-200' : 'bg-primary/20 text-white shadow-lg'}`}>
                          {m.text}
                       </div>
                    </div>
                 ))}
                 {(liveSarahText || liveUserText) && (
-                   <div className={`flex items-start gap-3 md:gap-4 ${liveUserText ? 'flex-row-reverse' : ''} animate-in fade-in duration-200`}>
-                      <div className={`p-4 md:p-6 rounded-2xl max-w-[85vw] md:max-w-[450px] italic opacity-60 text-sm md:text-base shadow-xl ${liveUserText ? 'bg-primary/10' : 'bg-white/5'}`}>
+                   <div className={`flex items-start gap-4 ${liveUserText ? 'flex-row-reverse' : ''} animate-in fade-in duration-200`}>
+                      <div className={`p-6 rounded-2xl max-w-[450px] italic opacity-60 text-base shadow-xl ${liveUserText ? 'bg-primary/10' : 'bg-white/5'}`}>
                          {liveSarahText || liveUserText}
                          <span className="inline-block w-1 h-4 bg-primary animate-blink ml-1 align-middle"></span>
                       </div>
                    </div>
                 )}
              </div>
-             <div className="h-16 md:h-24 bg-black/40 backdrop-blur-md border-t border-white/5 flex items-center px-4 md:px-10 gap-4 md:gap-10 shrink-0">
-                <div className={`size-8 md:size-10 ${isMuted ? 'bg-red-500/20 text-red-500 border-red-500/20' : 'bg-primary/20 text-primary border-primary/20'} rounded-full flex items-center justify-center shrink-0 border`}>
-                   <span className="material-symbols-outlined text-base md:text-xl">{isMuted ? 'mic_off' : 'mic'}</span>
+             <div className="h-24 bg-black/40 backdrop-blur-md border-t border-white/5 flex items-center px-10 gap-10 shrink-0">
+                <div className={`size-10 ${isMuted ? 'bg-red-500/20 text-red-500 border-red-500/20' : 'bg-primary/20 text-primary border-primary/20'} rounded-full flex items-center justify-center shrink-0 border`}>
+                   <span className="material-symbols-outlined text-xl">{isMuted ? 'mic_off' : 'mic'}</span>
                 </div>
-                <div className="flex-1 flex items-center gap-1 h-6 md:h-10 justify-center">
+                <div className="flex-1 flex items-center gap-1 h-10 justify-center">
                    {[...Array(30)].map((_, i) => (
                       <div key={i} className={`w-1 bg-primary rounded-full transition-all duration-300 ${!isMuted && !isPaused ? 'animate-pulse' : 'h-1'}`} style={{ height: !isMuted && !isPaused ? `${30 + Math.random() * 70}%` : '2px', animationDelay: `${i * 0.04}s` }}></div>
                    ))}
@@ -302,23 +309,23 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
              </div>
           </section>
 
-          <section className="lg:col-span-3 flex lg:flex-col gap-4 md:gap-6 shrink-0">
+          <section className="lg:col-span-3 flex lg:flex-col gap-6 shrink-0">
              <div className="hidden lg:flex bg-[#1c212b] rounded-3xl border border-white/5 p-8 flex-col items-center shadow-2xl">
                 <div className="text-6xl font-black tracking-tighter tabular-nums mb-2 font-mono text-primary">{formatTime(timer)}</div>
                 <div className="text-[10px] font-bold text-text-secondary opacity-40">Target: {config?.duration || 15}m</div>
              </div>
              
-             <div className="flex-1 bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 p-4 md:p-8 flex flex-col shadow-2xl overflow-hidden min-h-0">
+             <div className="flex-1 bg-[#1c212b] rounded-3xl border border-white/5 p-8 flex flex-col shadow-2xl overflow-hidden min-h-0">
                 <div className="space-y-4">
                    <div className="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center gap-3">
                       <div className="size-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <p className="text-[10px] font-black uppercase">Patience Control Active</p>
+                      <p className="text-[10px] font-black uppercase">Sarah is Listening</p>
                    </div>
-                   <p className="text-[9px] text-text-secondary leading-relaxed italic opacity-40">Sarah is waiting for 3 seconds of silence after your turn before concluding.</p>
+                   <p className="text-[10px] text-text-secondary leading-relaxed italic opacity-40">She is mandated to wait for your pauses to ensure a natural flow.</p>
                 </div>
              </div>
 
-             <div className="bg-[#1c212b] rounded-2xl md:rounded-3xl border border-white/5 p-4 flex items-center justify-between shadow-2xl shrink-0 gap-2">
+             <div className="bg-[#1c212b] rounded-3xl border border-white/5 p-4 flex items-center justify-between shadow-2xl shrink-0 gap-2">
                 <button onClick={() => setIsMuted(!isMuted)} className={`flex flex-col items-center gap-1 flex-1 ${isMuted ? 'text-red-500' : 'text-text-secondary hover:text-white'}`}>
                    <div className={`size-10 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'}`}>
                       <span className="material-symbols-outlined text-lg">{isMuted ? 'mic_off' : 'mic'}</span>

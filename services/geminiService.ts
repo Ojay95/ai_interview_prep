@@ -1,8 +1,41 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Standardizing on a stable model for background analysis tasks to prevent ProxyUnaryCall errors
-const STABLE_MODEL = 'gemini-flash-latest'; 
+// ==========================================
+// 1. CONFIGURATION & TYPES
+// ==========================================
+
+const TEXT_MODEL = 'gemini-3-flash-preview'; 
+
+export interface JobAnalysisResult {
+  roleName: string;
+  keySkills: string[];
+  recommendedFocusAreas: string[];
+  experienceLevel: string;
+}
+
+export interface ResumeMatchResult {
+  matchScore: number;
+  matchedKeywords: string[];
+  missingKeywords: Array<{ name: string; type: string }>;
+  overallFeedback: string;
+  recommendations: Array<{ 
+    title: string; 
+    impact: string; 
+    description: string; 
+    suggestion: string 
+  }>;
+}
+
+// ==========================================
+// 2. UTILITIES (Audio & Data)
+// ==========================================
+
+const getApiKey = () => {
+  const key = process.env.API_KEY;
+  if (!key) console.warn("⚠️ API Key is missing.");
+  return key || "";
+};
 
 export function decodeBase64(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -52,57 +85,86 @@ export async function decodeAudioData(
 
 export function cleanJsonString(str: string): string {
   if (!str) return "{}";
-  // Remove markdown formatting and ensure we only have the JSON object
-  const jsonMatch = str.match(/\{[\s\S]*\}/);
-  if (jsonMatch) return jsonMatch[0];
-  return str.replace(/```json/g, '').replace(/```/g, '').trim();
+  let clean = str.replace(/```json/g, '').replace(/```/g, '').trim();
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    clean = clean.substring(firstBrace, lastBrace + 1);
+  }
+  return clean;
 }
 
-export const analyzeJobDescription = async (jd: string) => {
+function safeJsonParse<T>(jsonString: string, fallback: T): T {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const cleaned = cleanJsonString(jsonString);
+    return JSON.parse(cleaned) as T;
+  } catch (error) {
+    console.error("JSON Parse Failed:", error);
+    return fallback;
+  }
+}
+
+// ==========================================
+// 3. AI SERVICES
+// ==========================================
+
+export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResult | { error: string }> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
-      model: STABLE_MODEL,
+      model: TEXT_MODEL,
       contents: [{ role: 'user', parts: [{ text: `Analyze the following Job Description and return a JSON object with: roleName (string), keySkills (string array), recommendedFocusAreas (string array), experienceLevel (string). \n\nJD: "${jd}"` }] }],
       config: { 
         responseMimeType: 'application/json',
         temperature: 0.1 
       }
     });
-    return JSON.parse(cleanJsonString(response.text));
+
+    return safeJsonParse<JobAnalysisResult>(response.text || "{}", {
+      roleName: "Analysis Failed",
+      keySkills: [],
+      recommendedFocusAreas: ["Retry Analysis"],
+      experienceLevel: "Unknown"
+    });
+
   } catch (error) {
     console.error("Error analyzing job description:", error);
     return { error: "Failed to analyze" }; 
   }
 };
 
-export const analyzeResumeMatch = async (resumeText: string, jdText: string) => {
+export const analyzeResumeMatch = async (resumeText: string, jdText: string): Promise<ResumeMatchResult> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    
+    const prompt = `Compare this Resume against this Job Description and return a detailed JSON analysis.
+    Return a strict JSON object with: matchScore, matchedKeywords, missingKeywords, overallFeedback, recommendations.`;
+
     const response = await ai.models.generateContent({
-      model: STABLE_MODEL,
-      contents: [{ role: 'user', parts: [{ text: `Compare this Resume against this Job Description and return a detailed JSON analysis.
-      
-      RESUME: 
-      ${resumeText}
-      
-      JD: 
-      ${jdText}
-      
-      Return a JSON object with:
-      - matchScore (number 0-100)
-      - matchedKeywords (string array)
-      - missingKeywords (object array with 'name' and 'type')
-      - overallFeedback (string)
-      - recommendations (object array with 'title', 'impact', 'description', 'suggestion')` }] }],
+      model: TEXT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt + `\n\nRESUME:\n${resumeText}\n\nJD:\n${jdText}` }] }],
       config: { 
         responseMimeType: 'application/json',
         temperature: 0.2
       }
     });
-    return JSON.parse(cleanJsonString(response.text));
+
+    return safeJsonParse<ResumeMatchResult>(response.text || "{}", {
+      matchScore: 0,
+      matchedKeywords: [],
+      missingKeywords: [],
+      overallFeedback: "We couldn't generate a valid analysis. Please try again.",
+      recommendations: []
+    });
+
   } catch (error) {
     console.error("Error matching resume:", error);
-    throw error;
+    return {
+      matchScore: 0,
+      matchedKeywords: [],
+      missingKeywords: [],
+      overallFeedback: "An error occurred during analysis.",
+      recommendations: []
+    };
   }
 };

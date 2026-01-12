@@ -58,7 +58,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
       {
         "overallScore": number (0-100),
         "performanceTag": "Excellent" | "Professional" | "Needs Improvement",
-        "summary": "string (1-2 sentence summary)",
+        "summary": "string",
         "keyStrengths": ["string"],
         "growthAreas": ["string"],
         "scoreBreakdown": [
@@ -71,15 +71,15 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
         "visualMetrics": {
            "eyeContactScore": number,
            "postureScore": number,
-           "energyLevel": "High" | "Medium" | "Low",
+           "energyLevel": "High",
            "visualFeedback": "string"
         },
         "detailedAnalysis": [
           {
             "question": "string",
             "userTranscript": "string",
-            "answerStatus": "Strong Answer" | "Average Answer" | "Weak" | "Lacks Detail",
-            "statusColor": "green" | "amber" | "red",
+            "answerStatus": "Strong Answer",
+            "statusColor": "green",
             "critique": "string",
             "improvedAnswer": "string"
           }
@@ -111,9 +111,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.text(`Interview Analysis: ${role}`, 20, 20);
-    doc.setFontSize(12);
-    doc.text(`Overall Score: ${analysis.overallScore}/100`, 20, 35);
-    doc.text(analysis.summary, 20, 45, { maxWidth: 170 });
+    doc.text(`Score: ${analysis.overallScore}/100`, 20, 35);
     doc.save(`Analysis_${role.replace(/\s+/g, '_')}.pdf`);
   };
 
@@ -128,49 +126,39 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
 
   return (
     <div className="min-h-screen bg-[#0f111a] text-white font-display pb-20 overflow-x-hidden">
-      {/* Top Navigation */}
       <nav className="flex items-center justify-between px-6 lg:px-12 py-4 bg-[#111521] border-b border-white/5 sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Logo className="size-8" />
           <span className="text-lg font-bold">AI Mock Interviewer</span>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-bold text-text-secondary">
-          <button onClick={() => onNavigate(Screen.Dashboard)} className="hover:text-white transition-all">Dashboard</button>
-          <button onClick={() => onNavigate(Screen.JDSetup)} className="hover:text-white transition-all">Practice</button>
-          <button className="hover:text-white transition-all">History</button>
-          <button className="hover:text-white transition-all">Profile</button>
-          <div className="size-9 rounded-full bg-slate-700 border border-white/10 overflow-hidden">
+        <div className="flex items-center gap-8 text-sm font-bold text-text-secondary">
+          <button onClick={() => onNavigate(Screen.Dashboard)} className="hover:text-white">Dashboard</button>
+          <button onClick={() => onNavigate(Screen.JDSetup)} className="hover:text-white">Practice</button>
+          <div className="size-9 rounded-full bg-slate-700 overflow-hidden">
             <img src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User" />
           </div>
         </div>
       </nav>
 
       <main className="max-w-[1400px] mx-auto px-6 mt-10 space-y-10">
-        {/* Title Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-text-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">
-               <span className="material-symbols-outlined text-sm">calendar_today</span>
-               Session ID: #8392 • Completed just now
-            </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">Interview Analysis: {role}</h1>
+            <p className="text-text-secondary text-xs uppercase font-bold tracking-widest opacity-60">Session ID: #8392 • Completed Just Now</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleDownloadReport} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-all">
+            <button onClick={handleDownloadReport} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold">
               <span className="material-symbols-outlined text-lg">download</span> Save Report
             </button>
-            <button onClick={() => onNavigate(Screen.JDSetup)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all">
+            <button onClick={() => onNavigate(Screen.JDSetup)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold">
               <span className="material-symbols-outlined text-lg">refresh</span> Retry Interview
             </button>
           </div>
         </div>
 
-        {/* Top Section Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column (1/3 Width on Desktop) */}
-          <div className="lg:col-span-4 flex flex-col gap-6 h-full">
-            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 flex flex-col items-center text-center shadow-xl h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 flex flex-col items-center text-center shadow-xl">
                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mb-8 opacity-60">Overall Performance</h3>
                <div className="relative size-44 flex items-center justify-center mb-8">
                   <svg className="size-full transform -rotate-90" viewBox="0 0 100 100">
@@ -193,19 +181,13 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                   </div>
                </div>
                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold mb-6">
-                  <span className="material-symbols-outlined text-sm">emoji_events</span>
                   {analysis?.performanceTag}
                </div>
-               <p className="text-xs text-text-secondary leading-relaxed max-w-xs font-medium italic">
-                  "{analysis?.summary}"
-               </p>
+               <p className="text-xs text-text-secondary leading-relaxed max-w-xs font-medium italic">"{analysis?.summary}"</p>
             </div>
 
             <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl">
-               <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Score Breakdown</h3>
-                  <span className="material-symbols-outlined text-text-secondary text-sm">info</span>
-               </div>
+               <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8">Score Breakdown</h3>
                <div className="space-y-6">
                   {analysis?.scoreBreakdown.map((s, i) => (
                     <div key={i} className="space-y-2">
@@ -214,7 +196,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                           <span className="text-amber-500">{s.value}%</span>
                        </div>
                        <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${s.value}%` }}></div>
+                          <div className="h-full bg-amber-500" style={{ width: `${s.value}%` }}></div>
                        </div>
                     </div>
                   ))}
@@ -222,45 +204,29 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
             </div>
           </div>
 
-          {/* Right Column (2/3 Width on Desktop) */}
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-            {/* Key Strengths */}
-            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col">
-               <div className="flex items-center gap-4 mb-6">
-                  <div className="size-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
-                     <span className="material-symbols-outlined">thumb_up</span>
-                  </div>
-                  <h3 className="text-sm font-black uppercase tracking-widest">Key Strengths</h3>
-               </div>
-               <ul className="space-y-6 flex-1">
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl">
+               <h3 className="text-sm font-black uppercase tracking-widest mb-6">Key Strengths</h3>
+               <ul className="space-y-6">
                   {analysis?.keyStrengths.map((s, i) => (
                     <li key={i} className="flex gap-4 items-start">
-                       <span className="material-symbols-outlined text-green-500 text-lg shrink-0">check_circle</span>
-                       <p className="text-xs text-text-secondary font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: s.replace(/"(.*?)"/g, '<strong>"$1"</strong>') }} />
+                       <span className="material-symbols-outlined text-green-500 text-lg">check_circle</span>
+                       <p className="text-xs text-text-secondary font-medium leading-relaxed">{s}</p>
                     </li>
                   ))}
                </ul>
             </div>
-
-            {/* Areas for Improvement */}
-            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col">
-               <div className="flex items-center gap-4 mb-6">
-                  <div className="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                     <span className="material-symbols-outlined">analytics</span>
-                  </div>
-                  <h3 className="text-sm font-black uppercase tracking-widest">Areas for Improvement</h3>
-               </div>
-               <ul className="space-y-6 flex-1">
+            <div className="bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl">
+               <h3 className="text-sm font-black uppercase tracking-widest mb-6">Areas for Improvement</h3>
+               <ul className="space-y-6">
                   {analysis?.growthAreas.map((s, i) => (
                     <li key={i} className="flex gap-4 items-start">
-                       <span className="material-symbols-outlined text-amber-500 text-lg shrink-0">arrow_upward</span>
-                       <p className="text-xs text-text-secondary font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: s.replace(/"(.*?)"/g, '<strong>"$1"</strong>') }} />
+                       <span className="material-symbols-outlined text-amber-500 text-lg">arrow_upward</span>
+                       <p className="text-xs text-text-secondary font-medium leading-relaxed">{s}</p>
                     </li>
                   ))}
                </ul>
             </div>
-
-            {/* Visual Presence Analysis Card */}
             <div className="md:col-span-2 bg-[#1c212b] rounded-2xl border border-white/5 p-8 shadow-xl flex flex-col md:flex-row gap-8 items-center">
                <div className="flex items-center gap-4 shrink-0">
                   <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -272,16 +238,16 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                   </div>
                </div>
                <div className="h-px md:h-12 w-full md:w-px bg-white/10"></div>
-               <div className="flex-1 grid grid-cols-3 gap-6 w-full">
-                  <div className="text-center">
+               <div className="flex-1 grid grid-cols-3 gap-6 w-full text-center">
+                  <div>
                      <div className="text-xl font-black">{analysis.visualMetrics.eyeContactScore}%</div>
                      <div className="text-[9px] font-black text-text-secondary uppercase">Eye Contact</div>
                   </div>
-                  <div className="text-center">
+                  <div>
                      <div className="text-xl font-black">{analysis.visualMetrics.postureScore}%</div>
                      <div className="text-[9px] font-black text-text-secondary uppercase">Posture</div>
                   </div>
-                  <div className="text-center">
+                  <div>
                      <div className="text-xl font-black text-primary">{analysis.visualMetrics.energyLevel}</div>
                      <div className="text-[9px] font-black text-text-secondary uppercase">Energy</div>
                   </div>
@@ -291,72 +257,42 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
           </div>
         </div>
 
-        {/* Detailed Question Analysis Section */}
         <div className="pt-10 border-t border-white/5">
            <h2 className="text-2xl font-black tracking-tight mb-8">Detailed Question Analysis</h2>
-           
-           {/* TWO COLUMN GRID ON DESKTOP - Eliminates empty space */}
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {analysis?.detailedAnalysis.map((qa, i) => (
-                <div key={i} className="bg-[#1c212b] rounded-[32px] border border-white/5 overflow-hidden shadow-2xl w-full flex flex-col h-full">
+                <div key={i} className="bg-[#1c212b] rounded-[32px] border border-white/5 overflow-hidden shadow-2xl flex flex-col">
                    <div className="px-8 py-5 bg-black/20 border-b border-white/5 flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                         <div className="size-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-text-secondary shrink-0">
-                            Q{i+1}
-                         </div>
-                         <h3 className="text-sm md:text-base font-bold line-clamp-1">"{qa.question}"</h3>
+                         <div className="size-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-text-secondary shrink-0">Q{i+1}</div>
+                         <h3 className="text-sm font-bold truncate">"{qa.question}"</h3>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 whitespace-nowrap shrink-0 ${
-                        qa.answerStatus === 'Strong Answer' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
-                        qa.answerStatus === 'Average Answer' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
-                        'bg-red-500/10 text-red-500 border-red-500/20'
-                      }`}>
-                         <span className="size-1 rounded-full bg-current"></span>
+                      <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5 flex items-center gap-2 whitespace-nowrap`}>
+                         <span className={`size-1.5 rounded-full ${qa.statusColor === 'green' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
                          {qa.answerStatus}
                       </div>
                    </div>
 
                    <div className="p-8 space-y-8 flex-1">
-                      {/* Your Transcript */}
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                           <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-40">Your Transcript</h4>
-                           <button className="flex items-center gap-2 text-primary text-[9px] font-black uppercase tracking-widest hover:underline shrink-0">
-                              <span className="material-symbols-outlined text-base">play_circle</span>
-                              Play Audio
-                           </button>
-                        </div>
+                        <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-40">Your Transcript</h4>
                         <div className="border-l-[3px] border-primary pl-6 py-1">
-                           <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">
-                              "{qa.userTranscript}"
-                           </p>
+                           <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">"{qa.userTranscript}"</p>
                         </div>
                       </div>
 
-                      {/* AI Coach Suggestion - Fixed Icon Fragment */}
                       <div className="bg-[#1e2536] rounded-[24px] p-6 space-y-4 border border-primary/10 relative overflow-hidden flex-1">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                           <span className="material-symbols-outlined text-5xl">psychology</span>
-                        </div>
-                        
                         <div className="flex items-center gap-3">
-                           {/* size-8 flex-none prevents fragmentation and clipping */}
+                           {/* Fixed icon container to prevent fragment issue */}
                            <div className="size-8 rounded-lg bg-primary flex flex-none items-center justify-center text-white shadow-lg shadow-primary/20">
                               <span className="material-symbols-outlined text-sm leading-none">sparkles</span>
                            </div>
                            <h4 className="text-[9px] font-black uppercase tracking-widest">AI Coach Suggestion</h4>
                         </div>
-
                         <div className="space-y-4">
-                           <p className="text-xs text-gray-300 leading-relaxed">
-                              <strong className="text-primary font-black uppercase text-[10px] tracking-wider mr-2">Critique:</strong> 
-                              {qa.critique}
-                           </p>
-                           
-                           <div className="bg-[#161b22] border border-white/5 rounded-2xl p-5 md:p-6 mt-4">
-                              <p className="text-[11px] md:text-xs text-gray-400 leading-relaxed italic">
-                                 "{qa.improvedAnswer}"
-                              </p>
+                           <p className="text-xs text-gray-300 leading-relaxed"><strong className="text-primary uppercase text-[10px] tracking-wider mr-2">Critique:</strong> {qa.critique}</p>
+                           <div className="bg-[#161b22] border border-white/5 rounded-2xl p-5 mt-4">
+                              <p className="text-[11px] md:text-xs text-gray-400 leading-relaxed italic">"{qa.improvedAnswer}"</p>
                            </div>
                         </div>
                       </div>
@@ -366,7 +302,6 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
            </div>
         </div>
       </main>
-      <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #3c4253; border-radius: 10px; }`}</style>
     </div>
   );
 };

@@ -43,6 +43,11 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
     try {
       const analysis = await analyzeJobDescription(context);
       
+      // Fix: Use a type guard to check if analysis returned an error object before accessing properties.
+      if ('error' in analysis) {
+        throw new Error(analysis.error);
+      }
+
       const config: InterviewConfig = {
         role: analysis.roleName || context.split('\n')[0].slice(0, 50) || 'Professional Candidate',
         experienceLevel: analysis.experienceLevel || experienceLevel,
@@ -204,7 +209,7 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
                   disabled={!context.trim() || isGenerating}
                   className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${!context.trim() || isGenerating ? 'bg-[#1c212b] text-text-secondary opacity-50 cursor-not-allowed' : 'bg-primary text-white shadow-2xl shadow-primary/30 hover:translate-y-[-2px] active:scale-[0.98]'}`}
                 >
-                  {isGenerating ? <span className="material-symbols-outlined animate-spin text-xl">refresh</span> : <span className="material-symbols-outlined">bolt</span>}
+                  {isGenerating ? <span className="material-symbols-outlined animate-spin text-xl">refresh</span> : <span className="material-symbols-outlined text-lg">bolt</span>}
                   {isGenerating ? 'Analyzing...' : 'Start Session'}
                 </button>
               </div>
