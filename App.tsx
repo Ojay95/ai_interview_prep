@@ -1,30 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { User, Screen } from './types';
-import { ROUTES } from './constants';
+import { User, Screen } from './types.ts';
+import { ROUTES } from './constants.tsx';
 
-// Import Screens
-import LandingScreen from './screens/LandingScreen';
-import SignInScreen from './screens/SignInScreen';
-import SignUpScreen from './screens/SignUpScreen';
-import DashboardScreen from './screens/DashboardScreen';
-import OnboardingScreen from './screens/OnboardingScreen';
-import JDSetupScreen from './screens/JDSetupScreen';
-import InterviewScreen from './screens/InterviewScreen';
-import AnalysisScreen from './screens/AnalysisScreen';
-import SettingsScreen from './screens/SettingsScreen';
-import SubscriptionScreen from './screens/SubscriptionScreen';
-import CVLandingScreen from './screens/CVLandingScreen';
-import CVAnalysisScreen from './screens/CVAnalysisScreen';
-import CVEditorScreen from './screens/CVEditorScreen';
-import PrivacyScreen from './screens/PrivacyScreen';
-import TermsScreen from './screens/TermsScreen';
-import ContactScreen from './screens/ContactScreen';
+// Import Screens with explicit extensions for browser-native ESM support
+import LandingScreen from './screens/LandingScreen.tsx';
+import SignInScreen from './screens/SignInScreen.tsx';
+import SignUpScreen from './screens/SignUpScreen.tsx';
+import DashboardScreen from './screens/DashboardScreen.tsx';
+import OnboardingScreen from './screens/OnboardingScreen.tsx';
+import JDSetupScreen from './screens/JDSetupScreen.tsx';
+import InterviewScreen from './screens/InterviewScreen.tsx';
+import AnalysisScreen from './screens/AnalysisScreen.tsx';
+import SettingsScreen from './screens/SettingsScreen.tsx';
+import SubscriptionScreen from './screens/SubscriptionScreen.tsx';
+import CVLandingScreen from './screens/CVLandingScreen.tsx';
+import CVAnalysisScreen from './screens/CVAnalysisScreen.tsx';
+import CVEditorScreen from './screens/CVEditorScreen.tsx';
+import PrivacyScreen from './screens/PrivacyScreen.tsx';
+import TermsScreen from './screens/TermsScreen.tsx';
+import ContactScreen from './screens/ContactScreen.tsx';
 
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {

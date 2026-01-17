@@ -1,10 +1,10 @@
-
 import { GoogleGenAI } from "@google/genai";
 
 // ==========================================
 // 1. CONFIGURATION & TYPES
 // ==========================================
 
+// Use gemini-3-flash-preview for text tasks as per guidelines
 const TEXT_MODEL = 'gemini-3-flash-preview'; 
 
 export interface JobAnalysisResult {
@@ -17,8 +17,11 @@ export interface JobAnalysisResult {
 export interface ResumeMatchResult {
   matchScore: number;
   matchedKeywords: string[];
-  missingKeywords: Array<{ name: string; type: string }>;
+  missingKeywords: string[];
   overallFeedback: string;
+  verdict: string;
+  shouldApply: string;
+  practiceAreas: string[];
   recommendations: Array<{ 
     title: string; 
     impact: string; 
@@ -31,10 +34,9 @@ export interface ResumeMatchResult {
 // 2. UTILITIES (Audio & Data)
 // ==========================================
 
+// Strictly use process.env.API_KEY as per guidelines
 const getApiKey = () => {
-  const key = process.env.API_KEY;
-  if (!key) console.warn("⚠️ API Key is missing.");
-  return key || "";
+  return process.env.API_KEY || "";
 };
 
 export function decodeBase64(base64: string): Uint8Array {
@@ -83,9 +85,12 @@ export async function decodeAudioData(
   return buffer;
 }
 
+// Improved JSON cleaner
 export function cleanJsonString(str: string): string {
   if (!str) return "{}";
+  // Remove markdown blocks (```json ... ```)
   let clean = str.replace(/```json/g, '').replace(/```/g, '').trim();
+  // Attempt to find the first '{' and last '}' to strip pre/post-amble text
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1) {
@@ -94,6 +99,7 @@ export function cleanJsonString(str: string): string {
   return clean;
 }
 
+// Generic Safe Parser to prevent app crashes
 function safeJsonParse<T>(jsonString: string, fallback: T): T {
   try {
     const cleaned = cleanJsonString(jsonString);
@@ -137,12 +143,28 @@ export const analyzeResumeMatch = async (resumeText: string, jdText: string): Pr
   try {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
     
-    const prompt = `Compare this Resume against this Job Description and return a detailed JSON analysis.
-    Return a strict JSON object with: matchScore, matchedKeywords, missingKeywords, overallFeedback, recommendations.`;
+    const prompt = `Act as an expert technical recruiter. Analyze the following Resume against the Job Description. 
+    Your goal is to provide a brutal, honest, and highly actionable alignment report.
+    
+    Return a strict JSON object with these EXACT keys:
+    - matchScore: (number 0-100) representing how well the candidate fits the requirements.
+    - matchedKeywords: (string array) specific technical and soft skills present in both.
+    - missingKeywords: (string array) critical requirements from the JD that are totally missing or weak in the resume.
+    - overallFeedback: (string) a concise summary of the alignment.
+    - verdict: (string) A short summary tag (e.g., 'Highly Qualified', 'Strong Potential', 'Significant Gaps', 'Underqualified').
+    - shouldApply: (string) A clear recommendation on whether to apply and why (e.g., 'Definitely apply! You are a top-tier candidate.', 'Go for it! You have 80% of what they need.', 'Apply with caution: focus on bridging technical gaps first.').
+    - practiceAreas: (string array) 3-5 specific topics the candidate MUST practice for an interview based on the requirements of THIS job.
+    - recommendations: (array of objects { title, impact, description, suggestion }) specific, high-impact edits to the resume to better align with this JD.
+    
+    RESUME:
+    "${resumeText}"
+    
+    JOB DESCRIPTION:
+    "${jdText}"`;
 
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: prompt + `\n\nRESUME:\n${resumeText}\n\nJD:\n${jdText}` }] }],
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { 
         responseMimeType: 'application/json',
         temperature: 0.2
@@ -154,6 +176,9 @@ export const analyzeResumeMatch = async (resumeText: string, jdText: string): Pr
       matchedKeywords: [],
       missingKeywords: [],
       overallFeedback: "We couldn't generate a valid analysis. Please try again.",
+      verdict: "Error in Analysis",
+      shouldApply: "Retry the analysis with more content.",
+      practiceAreas: ["General Technical Prep", "System Design", "Behavioral Alignment"],
       recommendations: []
     });
 
@@ -164,6 +189,9 @@ export const analyzeResumeMatch = async (resumeText: string, jdText: string): Pr
       matchedKeywords: [],
       missingKeywords: [],
       overallFeedback: "An error occurred during analysis.",
+      verdict: "Failed",
+      shouldApply: "Analysis failed due to a connection error.",
+      practiceAreas: [],
       recommendations: []
     };
   }

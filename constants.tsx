@@ -40,3 +40,4 @@ export const Logo: React.FC<{ className?: string }> = ({ className = "size-9" })
     <span className="material-symbols-outlined text-[24px]">graphic_eq</span>
   </div>
 );
+
