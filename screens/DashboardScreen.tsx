@@ -16,8 +16,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
   const isFree = user?.plan === 'free';
 
   useEffect(() => {
-    const usage = JSON.parse(localStorage.getItem(`usage_${user?.id}`) || '{"count": 0, "date": ""}');
-    setInterviewsLeft(Math.max(0, maxInterviews - usage.count));
+    // For demo purposes, we still allow local tracking, but in prod this would come from API
+    try {
+        const usage = JSON.parse(localStorage.getItem(`usage_${user?.id}`) || '{"count": 0, "date": ""}');
+        setInterviewsLeft(Math.max(0, maxInterviews - usage.count));
+    } catch (e) {
+        setInterviewsLeft(3);
+    }
   }, [user, maxInterviews]);
 
   const handleStartInterview = (targetScreen: Screen) => {
@@ -72,7 +77,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               </div>
               <div>
                 <h1 className="font-bold text-sm tracking-tight leading-none">AI Interviewer</h1>
-                <p className="text-[10px] text-text-secondary mt-1 font-black uppercase">
+                <p className="text-xs text-text-secondary mt-1 font-black uppercase">
                   {user?.plan || 'free'} Tier
                 </p>
               </div>
@@ -124,13 +129,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-primary" style={{ width: `${(interviewsLeft/maxInterviews)*100}%` }}></div>
              </div>
-             <p className="text-[9px] text-text-secondary/40 mt-2 font-bold uppercase tracking-widest text-center">Reset in 3 days</p>
+             <p className="text-[10px] text-text-secondary/60 mt-2 font-bold uppercase tracking-widest text-center">Reset in 3 days</p>
           </div>
 
           {isFree && (
             <button 
               onClick={() => onNavigate(Screen.Subscription)}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
             >
               Upgrade to Pro
             </button>
@@ -141,7 +146,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate leading-none">{user?.name || 'Alex Morgan'}</p>
-              <p className="text-[10px] text-text-secondary truncate mt-1">{user?.email || 'alex@example.com'}</p>
+              <p className="text-xs text-text-secondary truncate mt-1">{user?.email || 'alex@example.com'}</p>
             </div>
             <button onClick={onLogout} className="text-text-secondary hover:text-white transition-colors">
               <span className="material-symbols-outlined text-[20px]">logout</span>
@@ -172,20 +177,20 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
             <h2 className="text-2xl md:text-4xl font-black tracking-tight mb-2 leading-tight">Ready to ace it, {user?.name?.split(' ')[0] || 'Alex'}?</h2>
             <div className="flex items-center gap-2 text-text-secondary">
               <span className="material-symbols-outlined text-orange-500 text-lg md:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-              <p className="text-xs md:text-sm font-medium">You're on a 3-day streak! Keep going.</p>
+              <p className="text-sm font-medium">You're on a 3-day streak! Keep going.</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             <button 
               onClick={() => handleStartInterview(Screen.JDSetup)}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-xs md:text-base font-bold transition-all active:scale-95"
+              className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-sm font-bold transition-all active:scale-95"
             >
               <span className="material-symbols-outlined">description</span>
               Job Description
             </button>
             <button 
               onClick={() => handleStartInterview(Screen.Onboarding)}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-xs md:text-base font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
+              className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
             >
               <span className="material-symbols-outlined">mic</span>
               Start New Interview
@@ -206,10 +211,10 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                    <div className={`size-8 md:size-10 rounded-lg bg-white/5 ${stat.color} flex items-center justify-center`}>
                       <span className="material-symbols-outlined text-lg md:text-xl">{stat.icon}</span>
                    </div>
-                   <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60">{stat.inc}</div>
+                   <div className="text-[10px] font-black uppercase tracking-widest opacity-60">{stat.inc}</div>
                 </div>
                 <div>
-                   <p className="text-text-secondary text-[10px] md:text-xs font-bold mb-1">{stat.label}</p>
+                   <p className="text-text-secondary text-xs font-bold mb-1">{stat.label}</p>
                    <p className="text-xl md:text-3xl font-black truncate">{stat.val}</p>
                 </div>
              </div>
@@ -222,9 +227,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
              <div className="flex items-center justify-between relative z-10">
                 <div className="space-y-1">
                    <h3 className="text-lg md:text-xl font-bold">Performance Trend</h3>
-                   <p className="text-xs md:text-sm text-text-secondary">Progress over last 6 months</p>
+                   <p className="text-sm text-text-secondary">Progress over last 6 months</p>
                 </div>
-                <div className="px-2 md:px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-[8px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                <div className="px-2 md:px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                    <span className="material-symbols-outlined text-sm">trending_up</span>
                    +12%
                 </div>
@@ -233,7 +238,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                 <svg className="w-full h-full absolute inset-0 overflow-visible" preserveAspectRatio="none">
                    <path d="M0,200 C150,220 300,160 450,180 S750,120 900,100 L1200,90" fill="none" stroke="#194ce6" strokeWidth="3" />
                 </svg>
-                <div className="mt-auto pt-4 border-t border-white/5 flex justify-between text-[9px] md:text-[11px] font-bold text-text-secondary uppercase tracking-[0.2em]">
+                <div className="mt-auto pt-4 border-t border-white/5 flex justify-between text-[10px] md:text-xs font-bold text-text-secondary uppercase tracking-[0.2em]">
                    <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
                 </div>
              </div>
@@ -259,7 +264,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
         <div className="bg-[#1c212b] rounded-2xl md:rounded-[40px] border border-white/5 shadow-2xl overflow-hidden p-6 md:p-10">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg md:text-2xl font-black">Recent Sessions</h3>
-            <button className="text-primary text-xs md:text-sm font-bold hover:underline">View History</button>
+            <button className="text-primary text-sm font-bold hover:underline">View History</button>
           </div>
           <div className="overflow-x-auto -mx-6 px-6">
             <table className="w-full text-left min-w-[600px]">
@@ -281,11 +286,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm md:text-base font-bold text-white truncate">{session.role}</span>
-                          <span className="text-[10px] text-text-secondary mt-0.5 truncate">{session.type}</span>
+                          <span className="text-xs text-text-secondary mt-0.5 truncate">{session.type}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="py-6 text-[10px] md:text-sm text-text-secondary font-bold">{session.date}</td>
+                    <td className="py-6 text-xs md:text-sm text-text-secondary font-bold">{session.date}</td>
                     <td className="py-6">
                       <div className="flex items-center gap-3">
                         <span className="text-sm md:text-base font-black tabular-nums">{session.score}</span>

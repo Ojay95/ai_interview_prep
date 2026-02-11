@@ -1,39 +1,33 @@
 
 import React, { useState } from 'react';
-import { Screen, User } from '../types';
+import { Screen } from '../types';
 import { Logo } from '../constants';
+import { useAuthStore } from '../store/useAuthStore';
+import { ROUTES } from '../constants';
+import { useNavigate } from 'react-router-dom';
 
 interface SignInScreenProps {
   onNavigate: (screen: Screen) => void;
-  onLogin: (user: User) => void;
+  onLogin?: (user: any) => void; // Deprecated, kept for compat if needed
 }
 
-const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate, onLogin }) => {
+const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { login, isLoading } = useAuthStore();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
 
-    const savedUser = localStorage.getItem('mock_user');
-    let plan: 'free' | 'pro' | 'elite' = 'free';
-    
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        if (parsed.email === email) {
-          plan = parsed.plan || 'free';
-        }
-      } catch (e) {}
+    try {
+      await login(email, password);
+      // Navigation handled by effect in App or manual redirect
+      navigate(ROUTES.DASHBOARD);
+    } catch (error) {
+      console.error("Login failed", error);
     }
-
-    onLogin({
-      id: '1',
-      email,
-      name: email.split('@')[0],
-      plan: plan
-    });
   };
 
   return (
@@ -55,12 +49,13 @@ const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate, onLogin }) => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white" htmlFor="email">Email Address</label>
                 <input 
-                  className="w-full rounded-xl border border-border-dark bg-surface-dark h-12 px-4 text-white placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                  className="w-full rounded-xl border border-border-dark bg-surface-dark h-12 px-4 text-white placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none" 
                   id="email" 
                   placeholder="name@company.com" 
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
                   required
                 />
               </div>
@@ -70,12 +65,13 @@ const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate, onLogin }) => {
                   <button type="button" className="text-xs font-medium text-primary hover:underline">Forgot password?</button>
                 </div>
                 <input 
-                  className="w-full rounded-xl border border-border-dark bg-surface-dark h-12 px-4 text-white placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                  className="w-full rounded-xl border border-border-dark bg-surface-dark h-12 px-4 text-white placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none" 
                   id="password" 
                   placeholder="••••••••" 
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                   required
                 />
               </div>
@@ -85,8 +81,16 @@ const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate, onLogin }) => {
                 <label htmlFor="remember" className="text-sm text-text-secondary">Keep me logged in</label>
               </div>
 
-              <button type="submit" className="w-full flex items-center justify-center rounded-xl h-12 px-4 bg-primary hover:bg-primary-hover text-white font-bold shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
-                Sign In
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full flex items-center justify-center rounded-xl h-12 px-4 bg-primary hover:bg-primary-hover text-white font-bold shadow-lg shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Sign In'
+                )}
               </button>
             </form>
 

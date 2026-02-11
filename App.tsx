@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { User, Screen } from './types.ts';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { Screen } from './types.ts';
 import { ROUTES } from './constants.tsx';
+import { useAuthStore } from './store/useAuthStore.ts';
 
-// Import Screens with explicit extensions for browser-native ESM support
+// Screens
 import LandingScreen from './screens/LandingScreen.tsx';
 import SignInScreen from './screens/SignInScreen.tsx';
 import SignUpScreen from './screens/SignUpScreen.tsx';
@@ -22,35 +24,15 @@ import PrivacyScreen from './screens/PrivacyScreen.tsx';
 import TermsScreen from './screens/TermsScreen.tsx';
 import ContactScreen from './screens/ContactScreen.tsx';
 
+const ProtectedRoute = ({ children }: React.PropsWithChildren) => {
+  const { user } = useAuthStore();
+  if (!user) return <Navigate to={ROUTES.SIGN_IN} replace />;
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('mock_user');
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed && parsed.email) {
-          setUser(parsed);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load user from storage", e);
-    }
-  }, []);
-
-  const handleLogin = (u: User) => {
-    setUser(u);
-    localStorage.setItem('mock_user', JSON.stringify(u));
-    navigate(ROUTES.DASHBOARD);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('mock_user');
-    navigate(ROUTES.LANDING);
-  };
 
   const handleNavigate = (target: Screen) => {
     const routeMap: Record<Screen, string> = {
@@ -76,17 +58,27 @@ const AppContent: React.FC = () => {
     navigate(path);
   };
 
-  const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-    if (!user) return <Navigate to={ROUTES.SIGN_IN} replace />;
-    return children;
+  const handleLogout = () => {
+    logout();
+    navigate(ROUTES.LANDING);
   };
 
   return (
-    <div className="min-h-screen bg-[#0f111a] text-white">
+    <div className="min-h-screen bg-[#0f111a] text-white selection:bg-primary/30">
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          style: {
+            background: '#1c212b',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)'
+          }
+        }}
+      />
       <Routes>
         <Route path={ROUTES.LANDING} element={<LandingScreen onNavigate={handleNavigate} />} />
-        <Route path={ROUTES.SIGN_IN} element={<SignInScreen onNavigate={handleNavigate} onLogin={handleLogin} />} />
-        <Route path={ROUTES.SIGN_UP} element={<SignUpScreen onNavigate={handleNavigate} onLogin={handleLogin} />} />
+        <Route path={ROUTES.SIGN_IN} element={<SignInScreen onNavigate={handleNavigate} />} />
+        <Route path={ROUTES.SIGN_UP} element={<SignUpScreen onNavigate={handleNavigate} onLogin={() => {}} />} />
         <Route path={ROUTES.PRIVACY} element={<PrivacyScreen onNavigate={handleNavigate} />} />
         <Route path={ROUTES.TERMS} element={<TermsScreen onNavigate={handleNavigate} />} />
         <Route path={ROUTES.CONTACT} element={<ContactScreen onNavigate={handleNavigate} />} />
@@ -102,7 +94,7 @@ const AppContent: React.FC = () => {
         <Route path={ROUTES.CV_EDITOR} element={<ProtectedRoute><CVEditorScreen user={user} onNavigate={handleNavigate} /></ProtectedRoute>} />
         
         <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsScreen user={user} onNavigate={handleNavigate} onLogout={handleLogout} /></ProtectedRoute>} />
-        <Route path={ROUTES.SUBSCRIPTION} element={<ProtectedRoute><SubscriptionScreen user={user} onNavigate={handleNavigate} onUpdateUser={handleLogin} /></ProtectedRoute>} />
+        <Route path={ROUTES.SUBSCRIPTION} element={<ProtectedRoute><SubscriptionScreen user={user} onNavigate={handleNavigate} onUpdateUser={() => {}} /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to={ROUTES.LANDING} replace />} />
       </Routes>
@@ -112,9 +104,9 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <AppContent />
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

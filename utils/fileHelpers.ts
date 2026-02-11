@@ -1,8 +1,3 @@
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Point to the worker file on a CDN to avoid complex Vite build configuration
-// @ts-ignore
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 export const extractTextFromFile = async (file: File): Promise<string> => {
   const fileType = file.type;
@@ -20,6 +15,15 @@ export const extractTextFromFile = async (file: File): Promise<string> => {
   // 2. Handle PDF Files
   if (fileType === 'application/pdf') {
     try {
+      // Dynamic import to prevent main bundle crash if pdfjs fails to load initially
+      const pdfjsLib = await import('pdfjs-dist');
+
+      // Configure worker dynamically
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          // @ts-ignore
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs`;
+      }
+
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       

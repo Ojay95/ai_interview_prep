@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 
 // ==========================================
@@ -33,11 +34,6 @@ export interface ResumeMatchResult {
 // ==========================================
 // 2. UTILITIES (Audio & Data)
 // ==========================================
-
-// Strictly use process.env.API_KEY as per guidelines
-const getApiKey = () => {
-  return process.env.API_KEY || "";
-};
 
 export function decodeBase64(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -116,7 +112,7 @@ function safeJsonParse<T>(jsonString: string, fallback: T): T {
 
 export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResult | { error: string }> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: 'user', parts: [{ text: `Analyze the following Job Description and return a JSON object with: roleName (string), keySkills (string array), recommendedFocusAreas (string array), experienceLevel (string). \n\nJD: "${jd}"` }] }],
@@ -141,7 +137,7 @@ export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResu
 
 export const analyzeResumeMatch = async (resumeText: string, jdText: string): Promise<ResumeMatchResult> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const prompt = `Act as an expert technical recruiter. Analyze the following Resume against the Job Description. 
     Your goal is to provide a brutal, honest, and highly actionable alignment report.

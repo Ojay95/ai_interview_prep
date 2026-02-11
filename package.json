@@ -9,12 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "@google/genai": "^1.34.0",
-    "react-dom": "^19.2.3",
-    "react-router-dom": "^6.22.3",
-    "jspdf": "^2.5.1",
-    "pdfjs-dist": "4.4.168"
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "6.22.3",
+    "@google/genai": "0.0.12",
+    "jspdf": "2.5.1",
+    "pdfjs-dist": "4.0.379",
+    "axios": "1.6.8",
+    "zustand": "^5.0.11",
+    "react-hot-toast": "2.4.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

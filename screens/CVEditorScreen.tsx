@@ -11,7 +11,6 @@ interface CVEditorScreenProps {
 const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => {
   const [template, setTemplate] = useState('Modern Clean');
   const [bodySize, setBodySize] = useState(10.5);
-  const [lineSpacing, setLineSpacing] = useState(1.2);
   const [activeTab, setActiveTab] = useState<'Design' | 'Content'>('Design');
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('preview');
   const [scale, setScale] = useState(1);
@@ -33,7 +32,25 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-[#0d111a] text-white font-display overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#0d111a] text-white font-display overflow-hidden relative">
+      
+      {/* Mobile Guard Overlay */}
+      <div className="lg:hidden absolute inset-0 z-[100] bg-[#0d111a]/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center">
+        <div className="size-20 bg-primary/20 text-primary rounded-3xl flex items-center justify-center mb-6 border border-primary/20">
+           <span className="material-symbols-outlined text-4xl">desktop_windows</span>
+        </div>
+        <h2 className="text-2xl font-black mb-2">Desktop Optimized</h2>
+        <p className="text-text-secondary max-w-xs leading-relaxed mb-8">
+          The Advanced Resume Editor requires a larger screen for layout precision. Please switch to a desktop device.
+        </p>
+        <button 
+          onClick={() => onNavigate(Screen.Dashboard)}
+          className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+
       <header className="flex items-center justify-between px-4 md:px-6 lg:px-10 py-3 border-b border-white/5 bg-[#0d111a] shrink-0 z-50">
         <div className="flex items-center gap-4 md:gap-6">
            <div className="flex items-center gap-2 md:gap-3">
@@ -66,22 +83,6 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
            </div>
         </div>
       </header>
-
-      {/* Mobile Toggle Bar */}
-      <div className="lg:hidden flex border-b border-white/5 bg-[#11131a] shrink-0">
-         <button 
-           onClick={() => setViewMode('edit')}
-           className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${viewMode === 'edit' ? 'text-primary bg-primary/5 border-b-2 border-primary' : 'text-text-secondary'}`}
-         >
-           <span className="material-symbols-outlined text-sm">tune</span> Edit
-         </button>
-         <button 
-           onClick={() => setViewMode('preview')}
-           className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${viewMode === 'preview' ? 'text-primary bg-primary/5 border-b-2 border-primary' : 'text-text-secondary'}`}
-         >
-           <span className="material-symbols-outlined text-sm">visibility</span> Preview
-         </button>
-      </div>
 
       <main className="flex-1 flex overflow-hidden relative">
          {/* Editor Sidebar */}
@@ -144,35 +145,12 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
                      </div>
                   </div>
                </div>
-
-               <div className="space-y-6">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary flex items-center gap-2">
-                     <span className="material-symbols-outlined text-sm">palette</span> Colors
-                  </h3>
-                  <div className="flex flex-wrap gap-2.5">
-                     {['#0d111a', '#194ce6', '#10b981', '#8b5cf6', '#ef4444'].map((color, i) => (
-                       <button key={i} className={`size-7 md:size-8 rounded-full border-2 transition-all ${i === 0 ? 'border-white ring-2 ring-primary ring-offset-2 ring-offset-[#11131a]' : 'border-transparent hover:scale-110'}`} style={{ backgroundColor: color }}></button>
-                     ))}
-                  </div>
-               </div>
             </div>
          </aside>
 
          {/* Canvas Area */}
          <section className={`${viewMode === 'preview' ? 'flex' : 'hidden lg:flex'} flex-1 bg-black/20 overflow-y-auto p-4 md:p-8 lg:p-12 custom-scrollbar flex flex-col items-center gap-6 md:gap-10`}>
-            <div className="w-full max-w-4xl flex items-center justify-between mb-2">
-               <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary opacity-40">Page 1 of 1</p>
-               <div className="hidden sm:flex items-center gap-6 bg-surface-dark px-4 py-2 rounded-xl border border-white/5 shadow-2xl">
-                  <div className="flex items-center gap-4 border-r border-white/10 pr-6 mr-2">
-                     <button className="size-6 text-text-secondary hover:text-white transition-all"><span className="material-symbols-outlined text-lg">remove</span></button>
-                     <span className="text-[10px] font-black w-10 text-center">100%</span>
-                     <button className="size-6 text-text-secondary hover:text-white transition-all"><span className="material-symbols-outlined text-lg">add</span></button>
-                  </div>
-                  <button className="text-text-secondary hover:text-white transition-all"><span className="material-symbols-outlined text-lg">fullscreen</span></button>
-               </div>
-            </div>
-
-            {/* A4 Resume Mockup with Scale */}
+            {/* A4 Resume Mockup (Visual Only) */}
             <div className="relative" style={{ minHeight: `${1131 * scale}px`, width: `${800 * scale}px` }}>
               <div 
                 className="w-[800px] min-h-[1131px] bg-white text-[#1a1c24] p-8 md:p-16 shadow-[0_20px_60px_rgba(0,0,0,0.5)] origin-top-left absolute left-0 top-0"
@@ -213,37 +191,8 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
                           </div>
                        </section>
                     </div>
-
-                    <div className="md:col-span-4 space-y-8 md:space-y-12">
-                       <section className="space-y-4 md:space-y-6">
-                          <h2 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Skills</h2>
-                          <div className="flex flex-wrap gap-2">
-                             {['Figma', 'Sketch', 'Adobe CC', 'Prototyping'].map(s => (
-                               <span key={s} className="px-2 md:px-3 py-1 bg-slate-100 text-[8px] md:text-[10px] font-bold text-slate-600 rounded-lg">{s}</span>
-                             ))}
-                          </div>
-                       </section>
-                    </div>
                  </div>
               </div>
-            </div>
-
-            {/* Overlay Floating Score Badge (Adaptive Position) */}
-            <div className="w-full max-w-sm lg:absolute lg:bottom-10 lg:right-10 bg-[#161b22] border border-white/10 rounded-2xl p-5 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-white">
-                     <span className="material-symbols-outlined text-green-500 text-xl">task_alt</span>
-                     <h5 className="text-[9px] font-black uppercase tracking-widest">ATS Score</h5>
-                  </div>
-                  <button className="text-text-secondary"><span className="material-symbols-outlined text-sm">close</span></button>
-               </div>
-               <div className="space-y-1">
-                  <p className="text-xs font-bold text-green-500">Excellent (92/100)</p>
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                     <div className="h-full bg-green-500 w-[92%]"></div>
-                  </div>
-               </div>
-               <button className="w-full py-2.5 bg-primary/10 border border-primary/20 text-primary text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-primary/20 transition-all">View Full Analysis</button>
             </div>
          </section>
       </main>
