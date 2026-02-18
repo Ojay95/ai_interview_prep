@@ -4,21 +4,21 @@ import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
 const rootElement = document.getElementById('root');
+
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
 try {
-    const root = ReactDOM.createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
 } catch (error) {
-    console.error("Application failed to mount:", error);
-    // Display error on screen for debugging
-    rootElement.innerHTML = `
+  console.error("Application failed to mount:", error);
+  rootElement.innerHTML = `
     <div style="
         color: #ef4444; 
         background: #111521; 
@@ -32,8 +32,8 @@ try {
         padding: 20px;
     ">
         <h1 style="font-size: 24px; margin-bottom: 10px;">Critical Application Error</h1>
-        <p style="color: #9da4b8; margin-bottom: 20px;">The app failed to load. Please verify your internet connection and reload.</p>
-        <pre style="
+        <p style="color: #9da4b8; margin-bottom: 20px;">The app failed to start. Check the browser console for technical details.</p>
+        <div style="
             background: #1c1e26; 
             padding: 20px; 
             border-radius: 8px; 
@@ -41,6 +41,14 @@ try {
             overflow: auto; 
             max-width: 800px; 
             text-align: left;
-        ">${(error as Error).message}\n${(error as Error).stack}</pre>
+            font-family: monospace;
+            font-size: 12px;
+        ">
+          ${(error as Error).message}<br/>
+          ${(error as Error).stack?.replace(/\n/g, '<br/>')}
+        </div>
+        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #194ce6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+          Reload Application
+        </button>
     </div>`;
 }

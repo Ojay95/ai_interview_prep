@@ -9,10 +9,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script>
-        // Critical Polyfill: Ensure process.env exists for the app runtime
-        window.process = window.process || {};
-        window.process.env = window.process.env || {};
-        
+        // Critical Polyfill: Ensure process.env exists for the app runtime before modules load
+        (function() {
+            var env = {
+                VITE_DEMO_MODE: 'true',
+                VITE_API_URL: 'http://localhost:8080/api/v1',
+                API_KEY: '', // To be injected or handled via environment
+                NODE_ENV: 'development'
+            };
+            
+            var processPolyfill = {
+                env: env,
+                version: 'v16.0.0', // Fake Node version to satisfy some libs
+                nextTick: function(cb) { setTimeout(cb, 0); }
+            };
+
+            if (!window.process) window.process = processPolyfill;
+            if (!globalThis.process) globalThis.process = processPolyfill;
+        })();
+
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -59,11 +74,11 @@
     "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
     "@google/genai": "https://esm.sh/@google/genai@0.0.12",
     "jspdf": "https://esm.sh/jspdf@2.5.1",
-    "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.0.379",
-    "pdfjs-dist/": "https://esm.sh/pdfjs-dist@4.0.379/",
     "axios": "https://esm.sh/axios@1.6.8",
     "zustand": "https://esm.sh/zustand@4.5.2?deps=react@18.2.0",
     "zustand/middleware": "https://esm.sh/zustand@4.5.2/middleware?deps=react@18.2.0",
+    "zustand/vanilla": "https://esm.sh/zustand@4.5.2/vanilla?deps=react@18.2.0",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.0.379",
     "react-hot-toast": "https://esm.sh/react-hot-toast@2.4.1?deps=react@18.2.0,react-dom@18.2.0",
     "zustand/": "https://esm.sh/zustand@^5.0.11/"
   }

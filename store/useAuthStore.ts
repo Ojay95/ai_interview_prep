@@ -14,10 +14,8 @@ interface AuthState {
   updateUser: (updates: Partial<User>) => void;
 }
 
-// Robust environment access
-// @ts-ignore
-const env = window.process?.env || {};
-const IS_DEMO_MODE = env.VITE_DEMO_MODE === 'true';
+// Access the polyfilled environment safely
+const IS_DEMO_MODE = typeof process !== 'undefined' && process.env?.VITE_DEMO_MODE === 'true';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -30,10 +28,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           if (IS_DEMO_MODE) {
-            // Simulate Network Delay
             await new Promise(resolve => setTimeout(resolve, 800));
-            
-            // Mock Login Logic
             const mockUser: User = {
               id: '1',
               email: email,
@@ -41,19 +36,15 @@ export const useAuthStore = create<AuthState>()(
               plan: email.includes('admin') ? 'elite' : 'free',
               avatar: `https://i.pravatar.cc/150?u=${email}`
             };
-            
             set({ user: mockUser, token: 'mock-jwt-token-123', isLoading: false });
             toast.success(`Welcome back, ${mockUser.name}!`);
             return;
           }
 
-          // Real Backend Call
           const response = await apiClient.post('/auth/login', { email, password });
           const { user, token } = response.data;
-          
           set({ user, token, isLoading: false });
           toast.success('Successfully logged in');
-
         } catch (error) {
           set({ isLoading: false });
           if (!IS_DEMO_MODE) toast.error('Invalid credentials');
@@ -75,8 +66,8 @@ export const useAuthStore = create<AuthState>()(
       }
     }),
     {
-      name: 'auth_storage', // Key in localStorage
-      partialize: (state) => ({ user: state.user, token: state.token }), // Only persist user/token
+      name: 'auth_storage',
+      partialize: (state) => ({ user: state.user, token: state.token }),
     }
   )
 );
