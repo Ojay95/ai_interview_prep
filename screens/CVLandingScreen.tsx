@@ -1,10 +1,8 @@
-
 import React, { useState } from 'react';
 import { User, Screen } from '../types';
 import { Logo } from '../constants';
-import { extractTextFromFile } from '../utils/fileHelpers';
+import { useCVStore } from '../store/useCVStore';
 
-// Fix: Define props interface including onNavigate to match expected usage in App.tsx
 interface CVLandingScreenProps {
   user: User | null;
   onNavigate: (screen: Screen) => void;
@@ -12,34 +10,14 @@ interface CVLandingScreenProps {
 
 const CVLandingScreen: React.FC<CVLandingScreenProps> = ({ user, onNavigate }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const setResumeFile = useCVStore((state) => state.setResumeFile);
 
-  const processFile = async (file: File) => {
-    setIsProcessing(true);
-    setError(null);
-    
-    try {
-      // ✅ 1. Extract text purely on the frontend
-      const text = await extractTextFromFile(file);
-      
-      if (text.length < 50) {
-        throw new Error("The file seems empty or couldn't be read.");
-      }
+  const processFile = (file: File) => {
+    // 1. Save the actual File object to Zustand state (not localStorage)
+    setResumeFile(file);
 
-      // ✅ 2. Save to LocalStorage (simulating a "backend" database)
-      localStorage.setItem('pending_resume_text', text);
-      localStorage.setItem('pending_resume_name', file.name);
-
-      // ✅ 3. Go to Analysis using onNavigate
-      // Fix: Replaced direct navigate call with onNavigate prop
-      setTimeout(() => onNavigate(Screen.CVAnalysis), 500);
-      
-    } catch (err: any) {
-      setError(err.message || "Failed to read file");
-    } finally {
-      setIsProcessing(false);
-    }
+    // 2. Instantly go to Analysis screen
+    onNavigate(Screen.CVAnalysis);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -53,71 +31,53 @@ const CVLandingScreen: React.FC<CVLandingScreenProps> = ({ user, onNavigate }) =
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0d111a] text-white font-display">
-      <nav className="flex items-center px-8 py-6 border-b border-white/5">
-        {/* Fix: Replaced direct navigate call with onNavigate prop */}
-        <div onClick={() => onNavigate(Screen.Dashboard)} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-          <Logo />
-          <span className="text-xl font-bold tracking-tight">MockInterview.ai</span>
-        </div>
-      </nav>
-
-      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-2xl w-full space-y-8">
-          <div>
-            <h1 className="text-4xl font-black mb-4">Upload your Resume</h1>
-            <p className="text-gray-400">We'll analyze it against your target job description.</p>
+      <div className="flex flex-col h-screen bg-[#0d111a] text-white font-display">
+        <nav className="flex items-center px-8 py-6 border-b border-white/5">
+          <div onClick={() => onNavigate(Screen.Dashboard)} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <Logo />
+            <span className="text-xl font-bold tracking-tight">MockInterview.ai</span>
           </div>
+        </nav>
 
-          <div 
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            className={`
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-2xl w-full space-y-8">
+            <div>
+              <h1 className="text-4xl font-black mb-4">Upload your Resume</h1>
+              <p className="text-gray-400">We'll analyze it against your target job description.</p>
+            </div>
+
+            <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={`
               relative border-2 border-dashed rounded-3xl p-12 transition-all duration-300
-              flex flex-col items-center justify-center gap-6 group
+              flex flex-col items-center justify-center gap-6 group cursor-pointer
               ${isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-white/10 hover:border-white/20 bg-white/5'}
             `}
-          >
-            {isProcessing ? (
-              <div className="flex flex-col items-center animate-pulse">
-                <span className="material-symbols-outlined text-5xl text-primary mb-4 animate-spin">progress_activity</span>
-                <p className="font-bold text-lg">Reading Document...</p>
+                onClick={() => document.getElementById('resume-upload')?.click()}
+            >
+              <div className="size-20 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <span className="material-symbols-outlined text-4xl text-gray-400 group-hover:text-primary">upload_file</span>
               </div>
-            ) : (
-              <>
-                <div className="size-20 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <span className="material-symbols-outlined text-4xl text-gray-400 group-hover:text-primary">upload_file</span>
-                </div>
-                <div>
-                  <p className="text-xl font-bold mb-2">Drag & Drop your Resume</p>
-                  <p className="text-sm text-gray-500">Supports PDF, TXT, MD</p>
-                </div>
-                <input 
-                  type="file" 
-                  id="resume-upload" 
-                  className="hidden" 
+              <div>
+                <p className="text-xl font-bold mb-2">Drag & Drop your Resume</p>
+                <p className="text-sm text-gray-500">Supports PDF, TXT, MD</p>
+              </div>
+              <input
+                  type="file"
+                  id="resume-upload"
+                  className="hidden"
                   accept=".pdf,.txt,.md"
-                  onChange={handleFileInput} 
-                />
-                <button 
-                  onClick={() => document.getElementById('resume-upload')?.click()}
-                  className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  Browse Files
-                </button>
-              </>
-            )}
-          </div>
-
-          {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-medium">
-              ⚠️ {error}
+                  onChange={handleFileInput}
+              />
+              <button className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">
+                Browse Files
+              </button>
             </div>
-          )}
-        </div>
-      </main>
-    </div>
+          </div>
+        </main>
+      </div>
   );
 };
 

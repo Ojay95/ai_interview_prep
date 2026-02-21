@@ -1,47 +1,48 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Screen } from '../types';
 import { Logo } from '../constants';
 import { analyzeResumeMatch } from '../services/geminiService';
+import { useCVStore } from '../store/useCVStore'; // 👉 IMPORT THE STORE
+import toast from 'react-hot-toast';
 
 interface CVAnalysisScreenProps {
-  user: User | null;
-  onNavigate: (screen: Screen) => void;
+    user: User | null;
+    onNavigate: (screen: Screen) => void;
 }
 
 const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate }) => {
-  const [resumeText, setResumeText] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [jd, setJd] = useState(''); 
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+    // 👉 Pull the raw File object from Zustand
+    const resumeFile = useCVStore((state) => state.resumeFile);
 
-  useEffect(() => {
-    const text = localStorage.getItem('pending_resume_text');
-    const name = localStorage.getItem('pending_resume_name');
-    
-    if (!text) {
-      onNavigate(Screen.CVLanding); 
-    } else {
-      setResumeText(text);
-      setFileName(name || 'Uploaded Resume');
-    }
-  }, [onNavigate]);
+    const [jd, setJd] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<any>(null);
 
-  const handleAnalyze = async () => {
-    if (!jd.trim()) return;
-    
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeResumeMatch(resumeText, jd);
-      setAnalysisResult(result);
-    } catch (err) {
-      console.error("Analysis failed:", err);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+    useEffect(() => {
+        // If no file is in memory, kick them back to upload
+        if (!resumeFile) {
+            onNavigate(Screen.CVLanding);
+        }
+    }, [resumeFile, onNavigate]);
 
+    const handleAnalyze = async () => {
+        if (!jd.trim() || !resumeFile) return;
+
+        setIsAnalyzing(true);
+        toast.loading('Uploading and analyzing resume...', { id: 'cv-analyze' });
+
+        try {
+            // 👉 Pass the actual FILE object to geminiService (which calls your Java backend)
+            const result = await analyzeResumeMatch(resumeFile, jd);
+            setAnalysisResult(result);
+            toast.success('Analysis complete!', { id: 'cv-analyze' });
+        } catch (err) {
+            console.error("Analysis failed:", err);
+            toast.error('Failed to analyze resume. Please check your backend connection.', { id: 'cv-analyze' });
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
   const currentStats = analysisResult ? [
     { label: 'MATCH SCORE', value: `${analysisResult.matchScore}%`, sub: analysisResult.verdict, icon: 'trending_up', color: 'text-primary' },
     { label: 'KEYWORDS MATCHED', value: analysisResult.matchedKeywords?.length || 0, sub: 'Identified skills', icon: 'check_box', color: 'text-green-500' },
@@ -100,7 +101,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                      <div className="flex items-center gap-3 min-w-0">
                         <span className="material-symbols-outlined text-primary shrink-0">description</span>
                         <div className="min-w-0">
-                            <span className="text-[10px] md:text-xs font-bold truncate block">{fileName}</span>
+                            <span className="text-[10px] md:text-xs font-bold truncate block">{__filename}</span>
                             <span className="text-[9px] text-gray-500 truncate block">Ready for analysis</span>
                         </div>
                      </div>

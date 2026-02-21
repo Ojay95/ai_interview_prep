@@ -1,12 +1,8 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { apiClient } from './apiClient';
 
 // ==========================================
-// 1. CONFIGURATION & TYPES
+// 1. TYPES (Kept for UI compatibility)
 // ==========================================
-
-// Use gemini-3-flash-preview for text tasks as per guidelines
-const TEXT_MODEL = 'gemini-3-flash-preview'; 
 
 export interface JobAnalysisResult {
   roleName: string;
@@ -23,17 +19,18 @@ export interface ResumeMatchResult {
   verdict: string;
   shouldApply: string;
   practiceAreas: string[];
-  recommendations: Array<{ 
-    title: string; 
-    impact: string; 
-    description: string; 
-    suggestion: string 
+  recommendations: Array<{
+    title: string;
+    impact: string;
+    description: string;
+    suggestion: string
   }>;
 }
 
 // ==========================================
-// 2. UTILITIES (Audio & Data)
+// 2. UTILITIES (Audio Processing for Interview Screen)
 // ==========================================
+// We keep these because your browser still needs to process microphone data!
 
 export function decodeBase64(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -64,10 +61,10 @@ export function floatTo16BitPCM(data: Float32Array): Uint8Array {
 }
 
 export async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number = 24000,
-  numChannels: number = 1
+    data: Uint8Array,
+    ctx: AudioContext,
+    sampleRate: number = 24000,
+    numChannels: number = 1
 ): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
@@ -81,114 +78,59 @@ export async function decodeAudioData(
   return buffer;
 }
 
-// Improved JSON cleaner
-export function cleanJsonString(str: string): string {
-  if (!str) return "{}";
-  // Remove markdown blocks (```json ... ```)
-  let clean = str.replace(/```json/g, '').replace(/```/g, '').trim();
-  // Attempt to find the first '{' and last '}' to strip pre/post-amble text
-  const firstBrace = clean.indexOf('{');
-  const lastBrace = clean.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    clean = clean.substring(firstBrace, lastBrace + 1);
-  }
-  return clean;
-}
-
-// Generic Safe Parser to prevent app crashes
-function safeJsonParse<T>(jsonString: string, fallback: T): T {
-  try {
-    const cleaned = cleanJsonString(jsonString);
-    return JSON.parse(cleaned) as T;
-  } catch (error) {
-    console.error("JSON Parse Failed:", error);
-    return fallback;
-  }
-}
-
 // ==========================================
-// 3. AI SERVICES
+// 3. BACKEND API SERVICES
 // ==========================================
 
-export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResult | { error: string }> => {
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: `Analyze the following Job Description and return a JSON object with: roleName (string), keySkills (string array), recommendedFocusAreas (string array), experienceLevel (string). \n\nJD: "${jd}"` }] }],
-      config: { 
-        responseMimeType: 'application/json',
-        temperature: 0.1 
-      }
-    });
-
-    return safeJsonParse<JobAnalysisResult>(response.text || "{}", {
-      roleName: "Analysis Failed",
-      keySkills: [],
-      recommendedFocusAreas: ["Retry Analysis"],
-      experienceLevel: "Unknown"
-    });
-
-  } catch (error) {
-    console.error("Error analyzing job description:", error);
-    return { error: "Failed to analyze" }; 
-  }
+export const analyzeJobDescription = async (jdText: string): Promise<JobAnalysisResult | { error: string }> => {
+  // NOTE: Currently, your Spring Boot backend uses the JD to create an InterviewSession, 
+  // but doesn't have a standalone "Analyze JD" endpoint. 
+  // To keep the UI from breaking until you add that endpoint, we return a structural placeholder.
+  return {
+    roleName: "Configured from Job Description",
+    keySkills: ["Skills will be evaluated during interview"],
+    recommendedFocusAreas: ["Tailor your answers to the prompt"],
+    experienceLevel: "Determined during chat"
+  };
 };
 
-export const analyzeResumeMatch = async (resumeText: string, jdText: string): Promise<ResumeMatchResult> => {
+// 🚨 IMPORTANT FIX: Changed `resumeText: string` to `resumeFile: File`
+// Your Spring Boot backend expects a MultipartFile, not raw text!
+export const analyzeResumeMatch = async (resumeFile: File, jdText: string): Promise<ResumeMatchResult> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    const prompt = `Act as an expert technical recruiter. Analyze the following Resume against the Job Description. 
-    Your goal is to provide a brutal, honest, and highly actionable alignment report.
-    
-    Return a strict JSON object with these EXACT keys:
-    - matchScore: (number 0-100) representing how well the candidate fits the requirements.
-    - matchedKeywords: (string array) specific technical and soft skills present in both.
-    - missingKeywords: (string array) critical requirements from the JD that are totally missing or weak in the resume.
-    - overallFeedback: (string) a concise summary of the alignment.
-    - verdict: (string) A short summary tag (e.g., 'Highly Qualified', 'Strong Potential', 'Significant Gaps', 'Underqualified').
-    - shouldApply: (string) A clear recommendation on whether to apply and why (e.g., 'Definitely apply! You are a top-tier candidate.', 'Go for it! You have 80% of what they need.', 'Apply with caution: focus on bridging technical gaps first.').
-    - practiceAreas: (string array) 3-5 specific topics the candidate MUST practice for an interview based on the requirements of THIS job.
-    - recommendations: (array of objects { title, impact, description, suggestion }) specific, high-impact edits to the resume to better align with this JD.
-    
-    RESUME:
-    "${resumeText}"
-    
-    JOB DESCRIPTION:
-    "${jdText}"`;
+    const formData = new FormData();
+    formData.append('file', resumeFile);
+    formData.append('jobDescription', jdText);
 
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: { 
-        responseMimeType: 'application/json',
-        temperature: 0.2
-      }
+    // Call your Spring Boot CVController!
+    const response = await apiClient.post('/cv/analyze', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
 
-    return safeJsonParse<ResumeMatchResult>(response.text || "{}", {
-      matchScore: 0,
-      matchedKeywords: [],
-      missingKeywords: [],
-      overallFeedback: "We couldn't generate a valid analysis. Please try again.",
-      verdict: "Error in Analysis",
-      shouldApply: "Retry the analysis with more content.",
-      practiceAreas: ["General Technical Prep", "System Design", "Behavioral Alignment"],
-      recommendations: []
-    });
+    const data = response.data; // This is CVAnalysisResponse.java
+
+    // Map the Java DTO to the TypeScript Interface the UI expects
+    return {
+      matchScore: data.overallScore || 0,
+      matchedKeywords: data.matchedSkills || [],
+      missingKeywords: data.missingSkills || [],
+      overallFeedback: data.feedback || "Analysis complete.",
+      verdict: data.overallScore > 75 ? "Strong Potential" : "Significant Gaps",
+      shouldApply: data.overallScore > 75 ? "Definitely apply!" : "Apply with caution.",
+      practiceAreas: ["Review Missing Technical Skills"],
+      // Java returns a List<String> for recommendations, so we map it to the UI's expected object format
+      recommendations: data.recommendations ? data.recommendations.map((rec: string, index: number) => ({
+        title: `Improvement ${index + 1}`,
+        impact: "High",
+        description: rec,
+        suggestion: "Update your CV"
+      })) : []
+    };
 
   } catch (error) {
-    console.error("Error matching resume:", error);
-    return {
-      matchScore: 0,
-      matchedKeywords: [],
-      missingKeywords: [],
-      overallFeedback: "An error occurred during analysis.",
-      verdict: "Failed",
-      shouldApply: "Analysis failed due to a connection error.",
-      practiceAreas: [],
-      recommendations: []
-    };
+    console.error("Error analyzing resume:", error);
+    throw error; // Let the calling component handle the error toast
   }
 };
