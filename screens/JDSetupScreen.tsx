@@ -88,41 +88,41 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
 
   return (
     <div className="flex flex-col h-screen bg-[#0f111a] text-white">
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/5 bg-[#0f111a]/95 backdrop-blur-md px-6 lg:px-10 py-4">
-        <div className="flex items-center gap-3 lg:gap-4">
-          <Logo className="size-8" />
-          <h2 className="text-base lg:text-lg font-bold">Session Configuration</h2>
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/5 bg-[#0f111a]/95 backdrop-blur-md px-4 lg:px-10 py-3 lg:py-4">
+        <div className="flex items-center gap-2 lg:gap-4">
+          <Logo className="size-7 lg:size-8" />
+          <h2 className="text-sm lg:text-lg font-bold">Session Configuration</h2>
         </div>
-        <button onClick={() => onNavigate(Screen.Dashboard)} className="text-text-secondary hover:text-white transition-colors size-10 rounded-xl hover:bg-white/5 flex items-center justify-center">
-          <span className="material-symbols-outlined">close</span>
+        <button onClick={() => onNavigate(Screen.Dashboard)} className="text-text-secondary hover:text-white transition-colors size-8 lg:size-10 rounded-xl hover:bg-white/5 flex items-center justify-center">
+          <span className="material-symbols-outlined text-xl">close</span>
         </button>
       </header>
 
       <main className="max-w-7xl mx-auto w-full px-4 lg:px-10 py-6 lg:py-10 flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-10 overflow-y-auto custom-scrollbar">
         <div className="lg:col-span-8 flex flex-col gap-6 lg:gap-10">
-           <div className="space-y-4">
-              <div className="flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-[0.2em]">
-                 <span className="material-symbols-outlined text-sm">auto_awesome</span>
+           <div className="space-y-3 lg:space-y-4">
+              <div className="flex items-center gap-2 text-primary text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em]">
+                 <span className="material-symbols-outlined text-xs lg:text-sm">auto_awesome</span>
                  <span>Sarah Analysis Engine Ready</span>
               </div>
-              <h1 className="text-3xl lg:text-5xl font-black tracking-tight leading-tight">Practice Session</h1>
-              <p className="text-text-secondary text-sm lg:text-lg font-medium leading-relaxed opacity-80">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black tracking-tight leading-tight">Practice Session</h1>
+              <p className="text-text-secondary text-xs lg:text-lg font-medium leading-relaxed opacity-80">
                  Paste the job description, specific questions you want Sarah to ask, or simply describe the role. Sarah will parse and adapt instantly.
               </p>
            </div>
 
            <div className="relative group">
-              <div className="absolute top-6 left-6 flex items-center gap-2 text-text-secondary pointer-events-none group-focus-within:text-primary transition-colors">
-                 <span className="material-symbols-outlined text-sm">psychology</span>
-                 <span className="text-[10px] font-black uppercase tracking-widest">Context & Questions</span>
+              <div className="absolute top-4 lg:top-6 left-4 lg:left-6 flex items-center gap-2 text-text-secondary pointer-events-none group-focus-within:text-primary transition-colors">
+                 <span className="material-symbols-outlined text-xs lg:text-sm">psychology</span>
+                 <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest">Context & Questions</span>
               </div>
               <textarea 
-                className="w-full h-[350px] lg:h-[450px] rounded-[32px] bg-[#1c212b] border border-white/5 focus:border-primary focus:ring-1 focus:ring-primary text-white p-6 lg:p-8 pt-16 text-sm lg:text-base placeholder:text-text-secondary/20 resize-none transition-all shadow-2xl custom-scrollbar"
+                className="w-full h-[300px] sm:h-[350px] lg:h-[450px] rounded-[24px] lg:rounded-[32px] bg-[#1c212b] border border-white/5 focus:border-primary focus:ring-1 focus:ring-primary text-white p-5 lg:p-8 pt-14 lg:pt-16 text-xs lg:text-base placeholder:text-text-secondary/20 resize-none transition-all shadow-2xl custom-scrollbar"
                 placeholder="Example: Senior React Developer role at Google. Please ask me about my experience with micro-frontends and why I prefer Redux over Context."
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
               />
-              <div className="absolute bottom-6 right-8 flex items-center gap-2 text-[10px] font-bold text-text-secondary/30 pointer-events-none uppercase tracking-widest">
+              <div className="absolute bottom-4 lg:bottom-6 right-6 lg:right-8 flex items-center gap-2 text-[9px] lg:text-[10px] font-bold text-text-secondary/30 pointer-events-none uppercase tracking-widest">
                  {context.length} characters
               </div>
            </div>

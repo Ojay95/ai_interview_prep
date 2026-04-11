@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Screen, User } from '../types';
-import { Logo } from '../constants';
 
 interface CVEditorScreenProps {
   user: User | null;
@@ -34,30 +33,13 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
   return (
     <div className="flex flex-col h-screen bg-[#0d111a] text-white font-display overflow-hidden relative">
       
-      {/* Mobile Guard Overlay */}
-      <div className="lg:hidden absolute inset-0 z-[100] bg-[#0d111a]/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center">
-        <div className="size-20 bg-primary/20 text-primary rounded-3xl flex items-center justify-center mb-6 border border-primary/20">
-           <span className="material-symbols-outlined text-4xl">desktop_windows</span>
-        </div>
-        <h2 className="text-2xl font-black mb-2">Desktop Optimized</h2>
-        <p className="text-text-secondary max-w-xs leading-relaxed mb-8">
-          The Advanced Resume Editor requires a larger screen for layout precision. Please switch to a desktop device.
-        </p>
-        <button 
-          onClick={() => onNavigate(Screen.Dashboard)}
-          className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors"
-        >
-          Return to Dashboard
-        </button>
-      </div>
-
       <header className="flex items-center justify-between px-4 md:px-6 lg:px-10 py-3 border-b border-white/5 bg-[#0d111a] shrink-0 z-50">
-        <div className="flex items-center gap-4 md:gap-6">
-           <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-3 md:gap-6">
+           <div className="flex items-center gap-2 md:gap-3 cursor-pointer" onClick={() => onNavigate(Screen.Dashboard)}>
               <span className="material-symbols-outlined text-primary text-xl md:text-2xl">description</span>
               <div className="min-w-0">
-                 <h2 className="text-xs md:text-sm font-bold leading-none truncate max-w-[120px] md:max-w-none">Senior Product Designer CV</h2>
-                 <p className="text-[8px] md:text-[9px] text-text-secondary mt-1">Edited 2m ago</p>
+                 <h2 className="text-[10px] md:text-sm font-bold leading-none truncate max-w-[100px] md:max-w-none">Resume Editor</h2>
+                 <p className="text-[7px] md:text-[9px] text-text-secondary mt-1">Edited 2m ago</p>
               </div>
            </div>
            <nav className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-text-secondary/60">
@@ -74,15 +56,25 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
               <button className="size-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"><span className="material-symbols-outlined text-lg">redo</span></button>
            </div>
            <button className="hidden md:block px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Save Draft</button>
-           <button className="px-4 py-2 rounded-lg md:rounded-xl bg-primary text-white text-[9px] md:text-xs font-black uppercase tracking-widest hover:bg-primary-hover shadow-xl shadow-primary/20 transition-all flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">download</span>
-              <span className="hidden xs:inline">Export</span>
+           <button className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-primary text-white text-[8px] md:text-xs font-black uppercase tracking-widest hover:bg-primary-hover shadow-xl shadow-primary/20 transition-all flex items-center gap-1.5 md:gap-2">
+              <span className="material-symbols-outlined text-xs md:text-sm">download</span>
+              <span>Export</span>
            </button>
-           <div className="size-8 rounded-full border border-white/10 overflow-hidden bg-slate-700 ml-1">
+           <div className="size-7 md:size-8 rounded-full border border-white/10 overflow-hidden bg-slate-700 ml-1">
              <img src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User" />
            </div>
         </div>
       </header>
+
+      {/* Mobile View Toggle */}
+      <div className="lg:hidden flex border-b border-white/5 bg-[#11131a] shrink-0">
+         <button onClick={() => setViewMode('edit')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${viewMode === 'edit' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>
+            <span className="material-symbols-outlined text-sm">edit</span> Edit
+         </button>
+         <button onClick={() => setViewMode('preview')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${viewMode === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>
+            <span className="material-symbols-outlined text-sm">visibility</span> Preview
+         </button>
+      </div>
 
       <main className="flex-1 flex overflow-hidden relative">
          {/* Editor Sidebar */}

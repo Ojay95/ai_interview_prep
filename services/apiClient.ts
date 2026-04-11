@@ -2,10 +2,10 @@
 import axios, { AxiosError } from 'axios';
 
 // Safely access environment variables via polyfilled process
-// @ts-ignore
-const env = (typeof window !== 'undefined' && window.process?.env) || {};
+const env = (typeof window !== 'undefined' && (window as any).process?.env) || {};
 const IS_DEMO_MODE = env.VITE_DEMO_MODE === 'true' || true; 
 const BASE_URL = env.VITE_API_URL || 'http://localhost:8080/api/v1';
+
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

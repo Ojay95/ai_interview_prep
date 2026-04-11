@@ -19,9 +19,8 @@ export const extractTextFromFile = async (file: File): Promise<string> => {
       const pdfjsLib = await import('pdfjs-dist');
 
       // Configure worker dynamically
-      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-          // @ts-ignore
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs`;
+      if (!(pdfjsLib as any).GlobalWorkerOptions.workerSrc) {
+          (pdfjsLib as any).GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs`;
       }
 
       const arrayBuffer = await file.arrayBuffer();
@@ -34,7 +33,6 @@ export const extractTextFromFile = async (file: File): Promise<string> => {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
-          // @ts-ignore
           .map((item: any) => item.str)
           .join(' ');
         fullText += pageText + '\n';

@@ -19,8 +19,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
     // For demo purposes, we still allow local tracking, but in prod this would come from API
     try {
         const usage = JSON.parse(localStorage.getItem(`usage_${user?.id}`) || '{"count": 0, "date": ""}');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInterviewsLeft(Math.max(0, maxInterviews - usage.count));
-    } catch (e) {
+    } catch {
         setInterviewsLeft(3);
     }
   }, [user, maxInterviews]);
@@ -173,24 +174,24 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
         </div>
 
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h2 className="text-2xl md:text-4xl font-black tracking-tight mb-2 leading-tight">Ready to ace it, {user?.name?.split(' ')[0] || 'Alex'}?</h2>
+          <div className="w-full lg:w-auto">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-2 leading-tight">Ready to ace it, {user?.name?.split(' ')[0] || 'Alex'}?</h2>
             <div className="flex items-center gap-2 text-text-secondary">
               <span className="material-symbols-outlined text-orange-500 text-lg md:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
               <p className="text-sm font-medium">You're on a 3-day streak! Keep going.</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
             <button 
               onClick={() => handleStartInterview(Screen.JDSetup)}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-sm font-bold transition-all active:scale-95"
+              className="w-full sm:flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-sm font-bold transition-all active:scale-95"
             >
               <span className="material-symbols-outlined">description</span>
               Job Description
             </button>
             <button 
               onClick={() => handleStartInterview(Screen.Onboarding)}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
+              className="w-full sm:flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
             >
               <span className="material-symbols-outlined">mic</span>
               Start New Interview

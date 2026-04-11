@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Screen } from './types.ts';
@@ -64,15 +64,16 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f111a] text-white selection:bg-primary/30">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white selection:bg-primary/30 transition-colors duration-300">
       <Toaster 
         position="top-right" 
         toastOptions={{
           style: {
-            background: '#1c212b',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }
+            background: 'var(--toast-bg, #ffffff)',
+            color: 'var(--toast-color, #1e293b)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          },
+          className: 'dark:!bg-[#1c212b] dark:!text-white dark:!border-white/10'
         }}
       />
       <Routes>
