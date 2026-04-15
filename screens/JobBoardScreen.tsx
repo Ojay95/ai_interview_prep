@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from '../store/useAuthStore';
 import { Screen, Job } from '../types';
 import { jobService } from '../services/jobService';
+import { extractRoleFromResume } from '../services/geminiService';
 
 interface JobBoardScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -32,12 +33,26 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
+  const [derivedRole, setDerivedRole] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInitialJobs = async () => {
       setIsSearching(true);
+      
+      let roleToUse = user?.targetRole || 'Software Engineer';
+      
+      // Try to derive role from resume if user hasn't set a target role
+      if (!user?.targetRole) {
+        const resumeText = localStorage.getItem('pending_resume_text');
+        if (resumeText) {
+          const extracted = await extractRoleFromResume(resumeText);
+          roleToUse = extracted;
+          setDerivedRole(extracted);
+        }
+      }
+
       const { jobs: initialJobs, totalCount } = await jobService.getJobSuggestions(
-        user?.targetRole || 'Software Engineer',
+        roleToUse,
         locationQuery || user?.location || 'Remote',
         currentPage
       );
@@ -95,55 +110,57 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Sidebar Filters */}
-          <div className="lg:col-span-3 space-y-6">
-            <div className="bg-[#1c212b] rounded-[32px] border border-white/5 p-8 shadow-2xl">
-              <h3 className="font-bold text-white mb-6 flex items-center gap-2 uppercase text-xs tracking-[0.2em] opacity-60">
-                <Filter className="w-4 h-4" />
-                Filters
-              </h3>
-              
-              <div className="space-y-8">
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 block">
-                    Job Type
-                  </label>
-                  <div className="space-y-3">
-                    {['Full-time', 'Part-time', 'Contract', 'Remote'].map(type => (
-                      <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" className="size-4 rounded border-white/10 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0" />
-                        <span className="text-sm text-slate-400 group-hover:text-white transition-colors font-medium">{type}</span>
-                      </label>
-                    ))}
+          <div className="lg:col-span-3">
+            <div className="sticky top-24 space-y-6">
+              <div className="bg-[#1c212b] rounded-[32px] border border-white/5 p-8 shadow-2xl">
+                <h3 className="font-bold text-white mb-6 flex items-center gap-2 uppercase text-xs tracking-[0.2em] opacity-60">
+                  <Filter className="w-4 h-4" />
+                  Filters
+                </h3>
+                
+                <div className="space-y-8">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 block">
+                      Job Type
+                    </label>
+                    <div className="space-y-3">
+                      {['Full-time', 'Part-time', 'Contract', 'Remote'].map(type => (
+                        <label key={type} className="flex items-center gap-3 cursor-pointer group">
+                          <input type="checkbox" className="size-4 rounded border-white/10 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0" />
+                          <span className="text-sm text-slate-400 group-hover:text-white transition-colors font-medium">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-white/5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 block">
+                      Salary Range
+                    </label>
+                    <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary outline-none transition-all">
+                      <option className="bg-[#1c212b]">Any Salary</option>
+                      <option className="bg-[#1c212b]">$50k - $80k</option>
+                      <option className="bg-[#1c212b]">$80k - $120k</option>
+                      <option className="bg-[#1c212b]">$120k - $160k</option>
+                      <option className="bg-[#1c212b]">$160k+</option>
+                    </select>
                   </div>
                 </div>
+              </div>
 
-                <div className="pt-6 border-t border-white/5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 block">
-                    Salary Range
-                  </label>
-                  <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary outline-none transition-all">
-                    <option className="bg-[#1c212b]">Any Salary</option>
-                    <option className="bg-[#1c212b]">$50k - $80k</option>
-                    <option className="bg-[#1c212b]">$80k - $120k</option>
-                    <option className="bg-[#1c212b]">$120k - $160k</option>
-                    <option className="bg-[#1c212b]">$160k+</option>
-                  </select>
+              <div className="bg-gradient-to-br from-primary to-indigo-600 rounded-[32px] p-8 text-white shadow-2xl shadow-primary/20 relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                  <Zap className="w-32 h-32" />
                 </div>
+                <Zap className="w-10 h-10 mb-6 text-white/40" />
+                <h4 className="font-black text-xl mb-3 leading-tight">Get Notified</h4>
+                <p className="text-white/70 text-sm mb-6 font-medium leading-relaxed">
+                  We'll alert you as soon as a job matching your profile is found.
+                </p>
+                <button className="w-full bg-white text-primary font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-opacity-90 transition-all active:scale-95 shadow-lg">
+                  Enable Alerts
+                </button>
               </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-primary to-indigo-600 rounded-[32px] p-8 text-white shadow-2xl shadow-primary/20 relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                <Zap className="w-32 h-32" />
-              </div>
-              <Zap className="w-10 h-10 mb-6 text-white/40" />
-              <h4 className="font-black text-xl mb-3 leading-tight">Get Notified</h4>
-              <p className="text-white/70 text-sm mb-6 font-medium leading-relaxed">
-                We'll alert you as soon as a job matching your profile is found.
-              </p>
-              <button className="w-full bg-white text-primary font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-opacity-90 transition-all active:scale-95 shadow-lg">
-                Enable Alerts
-              </button>
             </div>
           </div>
 
@@ -197,7 +214,7 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
             <div className="space-y-6">
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-xl font-black tracking-tight text-white">
-                  {searchQuery ? `Results for "${searchQuery}"` : 'Recommended for you'}
+                  {searchQuery ? `Results for "${searchQuery}"` : derivedRole ? `Recommended for ${derivedRole}` : 'Recommended for you'}
                 </h2>
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{jobs.length} jobs found</span>
               </div>

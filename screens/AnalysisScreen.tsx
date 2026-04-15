@@ -259,6 +259,28 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
           </div>
         </div>
 
+        {/* Find Jobs Prompt */}
+        <div className="bg-gradient-to-br from-primary to-indigo-600 rounded-[24px] lg:rounded-[40px] p-8 lg:p-16 text-white shadow-2xl relative overflow-hidden group">
+           <div className="absolute -right-20 -bottom-20 opacity-10 group-hover:scale-110 transition-transform duration-700">
+              <span className="material-symbols-outlined text-[300px]">rocket_launch</span>
+           </div>
+           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
+              <div className="space-y-6 text-center lg:text-left">
+                 <h3 className="text-3xl lg:text-5xl font-black tracking-tight">Great job on the interview!</h3>
+                 <p className="text-white/80 text-sm lg:text-xl font-medium max-w-2xl leading-relaxed">
+                    You've practiced and analyzed your performance. You're ready for the real thing. Let's find some active job openings for <strong>{role}</strong> roles.
+                 </p>
+              </div>
+              <button 
+                 onClick={() => onNavigate(Screen.JobBoard)}
+                 className="w-full lg:w-auto px-12 py-6 bg-white text-primary font-black rounded-2xl text-xs lg:text-base uppercase tracking-widest hover:bg-opacity-90 transition-all active:scale-95 shadow-2xl flex items-center justify-center gap-4"
+              >
+                 Find Recommended Jobs
+                 <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+           </div>
+        </div>
+
         <div className="pt-6 lg:pt-10 border-t border-white/5">
            <h2 className="text-xl lg:text-2xl font-black tracking-tight mb-6 lg:mb-8">Detailed Question Analysis</h2>
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">

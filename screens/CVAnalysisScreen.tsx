@@ -413,6 +413,28 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                    </div>
                  ))}
               </div>
+
+              {/* Find Jobs Prompt */}
+              <div className="bg-gradient-to-br from-indigo-600 to-primary rounded-[24px] md:rounded-[32px] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden group mt-12">
+                 <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                    <span className="material-symbols-outlined text-[200px]">work</span>
+                 </div>
+                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="space-y-4 text-center md:text-left">
+                       <h3 className="text-2xl md:text-4xl font-black tracking-tight">Ready to apply?</h3>
+                       <p className="text-white/80 text-sm md:text-lg font-medium max-w-xl">
+                          We've analyzed your resume. Now let's find the perfect roles that match your new optimized profile.
+                       </p>
+                    </div>
+                    <button 
+                       onClick={() => onNavigate(Screen.JobBoard)}
+                       className="px-10 py-5 bg-white text-primary font-black rounded-2xl text-xs md:text-sm uppercase tracking-widest hover:bg-opacity-90 transition-all active:scale-95 shadow-2xl flex items-center gap-3"
+                    >
+                       Find Recommended Jobs
+                       <span className="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                 </div>
+              </div>
             </div>
           )}
         </div>

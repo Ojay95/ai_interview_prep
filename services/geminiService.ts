@@ -139,6 +139,33 @@ export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResu
   }
 };
 
+export const extractRoleFromResume = async (resumeText: string): Promise<string> => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
+    if (!apiKey) throw new Error("An API Key must be set when running in a browser");
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const prompt = `Based on the following resume text, identify the most appropriate and common professional job title for this person. 
+    Return ONLY the job title as a string. No other text.
+    
+    RESUME:
+    "${resumeText}"`;
+
+    const response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: { 
+        temperature: 0.1
+      }
+    });
+
+    return response.text.trim() || "Software Engineer";
+  } catch (error) {
+    console.error("Error extracting role from resume:", error);
+    return "Software Engineer";
+  }
+};
+
 export const analyzeResumeMatch = async (resumeText: string, jdText: string): Promise<ResumeMatchResult> => {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
