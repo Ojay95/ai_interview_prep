@@ -103,6 +103,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               <span className="material-symbols-outlined text-[20px]">description</span>
               CV Analysis
             </button>
+            <button 
+              onClick={() => { onNavigate(Screen.JobBoard); setIsSidebarOpen(false); }}
+              className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-[20px]">work</span>
+              Job Board
+            </button>
             <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium">
               <span className="material-symbols-outlined text-[20px]">history</span>
               History
@@ -181,20 +188,27 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               <p className="text-sm font-medium">You're on a 3-day streak! Keep going.</p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+            <button 
+              onClick={() => onNavigate(Screen.JobBoard)}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-xs font-bold transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-lg">work</span>
+              Job Board
+            </button>
             <button 
               onClick={() => handleStartInterview(Screen.JDSetup)}
-              className="w-full sm:flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-sm font-bold transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-xs font-bold transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined">description</span>
+              <span className="material-symbols-outlined text-lg">description</span>
               Job Description
             </button>
             <button 
               onClick={() => handleStartInterview(Screen.Onboarding)}
-              className="w-full sm:flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
             >
-              <span className="material-symbols-outlined">mic</span>
-              Start New Interview
+              <span className="material-symbols-outlined text-lg">mic</span>
+              Start Interview
             </button>
           </div>
         </header>

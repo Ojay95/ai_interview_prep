@@ -22,6 +22,7 @@ export const ROUTES = {
   CV_LANDING: '/cv',
   CV_ANALYSIS: '/cv/analysis',
   CV_EDITOR: '/cv/editor',
+  JOB_BOARD: '/jobs',
   SETTINGS: '/settings',
   SUBSCRIPTION: '/subscription',
   PRIVACY: '/privacy',

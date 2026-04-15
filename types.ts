@@ -14,9 +14,26 @@ export enum Screen {
   CVLanding = 'cv-landing',
   CVAnalysis = 'cv-analysis',
   CVEditor = 'cv-editor',
+  JobBoard = 'job-board',
   Privacy = 'privacy',
   Terms = 'terms',
   Contact = 'contact'
+}
+
+export interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary?: string;
+  type: string; // Full-time, Remote, etc.
+  description: string;
+  requirements: string[];
+  postedDate: string;
+  source: string;
+  externalUrl: string;
+  matchScore?: number;
+  aiReasoning?: string;
 }
 
 export interface User {
@@ -25,6 +42,8 @@ export interface User {
   name: string;
   plan: 'free' | 'pro' | 'elite';
   avatar?: string;
+  targetRole?: string;
+  location?: string;
   interviewsToday?: number;
   lastInterviewDate?: string;
 }

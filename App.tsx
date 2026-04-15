@@ -20,6 +20,7 @@ import SubscriptionScreen from './screens/SubscriptionScreen.tsx';
 import CVLandingScreen from './screens/CVLandingScreen.tsx';
 import CVAnalysisScreen from './screens/CVAnalysisScreen.tsx';
 import CVEditorScreen from './screens/CVEditorScreen.tsx';
+import { JobBoardScreen } from './screens/JobBoardScreen.tsx';
 import PrivacyScreen from './screens/PrivacyScreen.tsx';
 import TermsScreen from './screens/TermsScreen.tsx';
 import ContactScreen from './screens/ContactScreen.tsx';
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => {
       [Screen.CVLanding]: ROUTES.CV_LANDING,
       [Screen.CVAnalysis]: ROUTES.CV_ANALYSIS,
       [Screen.CVEditor]: ROUTES.CV_EDITOR,
+      [Screen.JobBoard]: ROUTES.JOB_BOARD,
       [Screen.Privacy]: ROUTES.PRIVACY,
       [Screen.Terms]: ROUTES.TERMS,
       [Screen.Contact]: ROUTES.CONTACT,
@@ -93,6 +95,8 @@ const AppContent: React.FC = () => {
         <Route path={ROUTES.CV_LANDING} element={<ProtectedRoute><CVLandingScreen user={user} onNavigate={handleNavigate} /></ProtectedRoute>} />
         <Route path={ROUTES.CV_ANALYSIS} element={<ProtectedRoute><CVAnalysisScreen user={user} onNavigate={handleNavigate} /></ProtectedRoute>} />
         <Route path={ROUTES.CV_EDITOR} element={<ProtectedRoute><CVEditorScreen user={user} onNavigate={handleNavigate} /></ProtectedRoute>} />
+        
+        <Route path={ROUTES.JOB_BOARD} element={<ProtectedRoute><JobBoardScreen onNavigate={handleNavigate} /></ProtectedRoute>} />
         
         <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsScreen user={user} onNavigate={handleNavigate} onLogout={handleLogout} /></ProtectedRoute>} />
         <Route path={ROUTES.SUBSCRIPTION} element={<ProtectedRoute><SubscriptionScreen user={user} onNavigate={handleNavigate} onUpdateUser={() => {}} /></ProtectedRoute>} />
