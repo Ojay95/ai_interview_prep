@@ -1,5 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { 
+  X, 
+  Bot, 
+  User as UserIcon, 
+  SendHorizonal, 
+  ListChecks, 
+  Check 
+} from 'lucide-react';
 import { Screen, User, InterviewConfig } from '../types';
 import { Logo } from '../constants';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -165,7 +173,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
           </div>
         </div>
         <button onClick={() => onNavigate(Screen.Dashboard)} className="size-10 rounded-xl flex items-center justify-center text-text-secondary hover:text-white hover:bg-white/5 transition-all">
-           <span className="material-symbols-outlined">close</span>
+           <X className="size-5" />
         </button>
       </header>
 
@@ -175,7 +183,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
               {messages.map((m, i) => (
                 <div key={i} className={`flex items-start gap-3 md:gap-4 ${m.sender === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                    <div className={`size-8 md:size-10 rounded-2xl flex items-center justify-center shrink-0 ${m.sender === 'ai' ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-primary text-white shadow-lg shadow-primary/20'}`}>
-                      <span className="material-symbols-outlined text-lg md:text-xl">{m.sender === 'ai' ? 'smart_toy' : 'person'}</span>
+                      {m.sender === 'ai' ? <Bot className="size-5 md:size-6" /> : <UserIcon className="size-5 md:size-6" />}
                    </div>
                    <div className={`flex flex-col gap-1.5 max-w-[85%] ${m.sender === 'user' ? 'items-end' : ''}`}>
                       <div className={`p-4 md:p-5 rounded-2xl shadow-sm text-sm lg:text-base leading-relaxed whitespace-pre-wrap ${m.sender === 'ai' ? 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-none' : 'bg-primary text-white rounded-tr-none'}`}>
@@ -188,7 +196,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
               {isTyping && (
                 <div className="flex items-center gap-4 animate-in fade-in duration-200">
                    <div className="size-10 rounded-2xl bg-primary/20 text-primary border border-primary/20 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-xl">smart_toy</span>
+                      <Bot className="size-6" />
                    </div>
                    <div className="flex items-center gap-1.5 bg-white/5 p-4 rounded-2xl rounded-tl-none w-20 justify-center">
                       <div className="size-1.5 bg-primary rounded-full animate-bounce"></div>
@@ -210,7 +218,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                  />
                  <button onClick={handleSend} disabled={!input.trim() || isTyping} className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:bg-primary-hover disabled:opacity-50 transition-all active:scale-95">
-                    <span className="material-symbols-outlined">send</span>
+                    <SendHorizonal className="size-5 md:size-6" />
                  </button>
               </div>
            </div>
@@ -232,7 +240,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
 
            <div className="flex-1 bg-[#1c212b] p-6 md:p-8 rounded-3xl border border-white/5 shadow-xl flex flex-col">
               <h4 className="text-white font-bold text-sm mb-6 border-b border-white/5 pb-4 flex items-center gap-2">
-                 <span className="material-symbols-outlined text-primary text-lg">checklist</span>
+                 <ListChecks className="size-5 text-primary" />
                  Checklist
               </h4>
               <div className="space-y-6 flex-1">
@@ -244,9 +252,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
                  ].map((step, i) => (
                    <div key={i} className="flex gap-4">
                       <div className={`size-8 rounded-xl flex items-center justify-center text-[10px] font-black border transition-all duration-500 ${step.done ? 'bg-primary/20 text-primary border-primary/20' : 'bg-black/20 text-text-secondary border-white/5'}`}>
-                        {step.done ? <span className="material-symbols-outlined text-sm">check</span> : i + 1}
+                        {step.done ? <Check className="size-4" /> : i + 1}
                       </div>
-                      <div className="pt-0.5">
+                      <div className="pt-0.5 text-left">
                         <p className={`text-[10px] font-black uppercase tracking-widest ${step.done ? 'text-primary' : 'text-text-secondary'}`}>{step.label}</p>
                         <p className={`text-xs font-medium mt-0.5 ${step.done ? 'text-white' : 'text-text-secondary/40'}`}>{step.done ? 'Confirmed' : 'Pending'}</p>
                       </div>

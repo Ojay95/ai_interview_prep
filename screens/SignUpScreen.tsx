@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { LayoutGrid, Eye } from 'lucide-react';
 import { Screen, User } from '../types';
 import { Logo } from '../constants';
 import { useAuthStore } from '../store/useAuthStore';
@@ -53,7 +54,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
               Google
             </button>
             <button className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-surface-dark py-2.5 px-4 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#252833] transition-colors">
-              <span className="material-symbols-outlined text-[20px]">hub</span>
+              <LayoutGrid className="size-5" />
               GitHub
             </button>
           </div>
@@ -93,7 +94,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
                   required
                 />
                 <button className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-secondary hover:text-slate-600 dark:hover:text-white" type="button">
-                  <span className="material-symbols-outlined text-[20px]">visibility</span>
+                  <Eye className="size-5" />
                 </button>
               </div>
               <p className="text-xs text-slate-500 dark:text-text-secondary mt-1">Must be at least 8 characters long.</p>

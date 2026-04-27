@@ -1,5 +1,13 @@
 
 import React, { useState } from 'react';
+import { 
+  X, 
+  CheckCircle, 
+  ShieldCheck, 
+  Star, 
+  Loader2, 
+  ChevronDown 
+} from 'lucide-react';
 import { Screen, User } from '../types';
 import { Logo } from '../constants';
 
@@ -56,7 +64,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
           <span className="text-lg font-bold tracking-tight">MockInterview.ai</span>
         </div>
         <button onClick={() => onNavigate(Screen.Dashboard)} className="text-text-secondary hover:text-white transition-colors size-10 rounded-xl hover:bg-white/5 flex items-center justify-center">
-          <span className="material-symbols-outlined">close</span>
+          <X className="size-5" />
         </button>
       </header>
 
@@ -93,7 +101,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
                   { text: '15,000 tokens / month', icon: 'generating_tokens' },
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-gray-300 font-medium">
-                    <span className="material-symbols-outlined text-lg text-green-500/40">check_circle</span>
+                    <CheckCircle className="size-5 text-green-500/40" />
                     {item.text}
                   </li>
                 ))}
@@ -133,7 +141,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
                   { text: '250,000 tokens / month', icon: 'verified' },
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-white font-bold">
-                    <span className="material-symbols-outlined text-lg text-primary">verified</span>
+                    <ShieldCheck className="size-5 text-primary" />
                     {item.text}
                   </li>
                 ))}
@@ -144,7 +152,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
               disabled={user?.plan === 'pro' || user?.plan === 'elite' || !!isProcessing}
               className="w-full py-5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {isProcessing === 'pro' ? <span className="material-symbols-outlined animate-spin">refresh</span> : null}
+              {isProcessing === 'pro' ? <Loader2 className="size-4 animate-spin" /> : null}
               {user?.plan === 'pro' ? 'Current Tier' : isProcessing === 'pro' ? 'Processing...' : 'Upgrade Now'}
             </button>
           </div>
@@ -176,7 +184,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
                   { text: '700,000 tokens / month', icon: 'star' },
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-white font-bold">
-                    <span className="material-symbols-outlined text-lg text-purple-400">star</span>
+                    <Star className="size-5 text-purple-400" />
                     {item.text}
                   </li>
                 ))}
@@ -187,7 +195,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
               disabled={user?.plan === 'elite' || !!isProcessing}
               className="w-full py-5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {isProcessing === 'elite' ? <span className="material-symbols-outlined animate-spin">refresh</span> : null}
+              {isProcessing === 'elite' ? <Loader2 className="size-4 animate-spin" /> : null}
               {user?.plan === 'elite' ? 'Current Tier' : isProcessing === 'elite' ? 'Processing...' : 'Go Elite'}
             </button>
           </div>
@@ -208,8 +216,8 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ user, onNavigat
                     className="w-full px-6 lg:px-8 py-5 lg:py-6 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
                   >
                      <span className="font-bold text-sm lg:text-lg">{faq.question}</span>
-                     <span className={`material-symbols-outlined transition-transform duration-300 ${openFAQ === i ? 'rotate-180' : ''}`}>
-                        expand_more
+                     <span className={`transition-transform duration-300 ${openFAQ === i ? 'rotate-180' : ''}`}>
+                        <ChevronDown className="size-5" />
                      </span>
                   </button>
                   <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openFAQ === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>

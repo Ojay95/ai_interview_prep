@@ -1,5 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
+import { 
+  Download, 
+  RefreshCcw, 
+  CheckCircle, 
+  ArrowUp, 
+  Eye, 
+  Rocket, 
+  ArrowRight, 
+  Sparkles 
+} from 'lucide-react';
 import { Screen, User, VisualMetrics } from '../types';
 import { GoogleGenAI } from '@google/genai';
 import { cleanJsonString } from '../services/geminiService';
@@ -150,10 +160,10 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
           </div>
           <div className="flex items-center gap-3">
             <button onClick={handleDownloadReport} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 lg:px-5 py-2 lg:py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] lg:text-xs font-bold">
-              <span className="material-symbols-outlined text-base lg:text-lg">download</span> Save Report
+              <Download className="size-4" /> Save Report
             </button>
             <button onClick={() => onNavigate(Screen.JDSetup)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 lg:px-5 py-2 lg:py-2.5 rounded-xl bg-primary text-white text-[10px] lg:text-xs font-bold">
-              <span className="material-symbols-outlined text-base lg:text-lg">refresh</span> Retry Interview
+              <RefreshCcw className="size-4" /> Retry Interview
             </button>
           </div>
         </div>
@@ -212,7 +222,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                <ul className="space-y-4 lg:space-y-6">
                   {analysis?.keyStrengths.map((s, i) => (
                     <li key={i} className="flex gap-3 lg:gap-4 items-start">
-                       <span className="material-symbols-outlined text-green-500 text-base lg:text-lg">check_circle</span>
+                       <CheckCircle className="size-4 text-green-500 mt-0.5" />
                        <p className="text-[10px] lg:text-xs text-text-secondary font-medium leading-relaxed">{s}</p>
                     </li>
                   ))}
@@ -223,7 +233,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                <ul className="space-y-4 lg:space-y-6">
                   {analysis?.growthAreas.map((s, i) => (
                     <li key={i} className="flex gap-3 lg:gap-4 items-start">
-                       <span className="material-symbols-outlined text-amber-500 text-base lg:text-lg">arrow_upward</span>
+                       <ArrowUp className="size-4 text-amber-500 mt-0.5" />
                        <p className="text-[10px] lg:text-xs text-text-secondary font-medium leading-relaxed">{s}</p>
                     </li>
                   ))}
@@ -232,7 +242,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
             <div className="md:col-span-2 bg-[#1c212b] rounded-2xl border border-white/5 p-6 lg:p-8 shadow-xl flex flex-col md:flex-row gap-6 lg:gap-8 items-center">
                <div className="flex items-center gap-4 shrink-0 w-full md:w-auto">
                   <div className="size-10 lg:size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                     <span className="material-symbols-outlined text-xl lg:text-2xl">visibility</span>
+                     <Eye className="size-6" />
                   </div>
                   <div>
                     <h3 className="text-xs lg:text-sm font-black uppercase tracking-widest">Visual Presence</h3>
@@ -262,7 +272,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
         {/* Find Jobs Prompt */}
         <div className="bg-gradient-to-br from-primary to-indigo-600 rounded-[24px] lg:rounded-[40px] p-8 lg:p-16 text-white shadow-2xl relative overflow-hidden group">
            <div className="absolute -right-20 -bottom-20 opacity-10 group-hover:scale-110 transition-transform duration-700">
-              <span className="material-symbols-outlined text-[300px]">rocket_launch</span>
+              <Rocket className="size-80" />
            </div>
            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
               <div className="space-y-6 text-center lg:text-left">
@@ -276,7 +286,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                  className="w-full lg:w-auto px-12 py-6 bg-white text-primary font-black rounded-2xl text-xs lg:text-base uppercase tracking-widest hover:bg-opacity-90 transition-all active:scale-95 shadow-2xl flex items-center justify-center gap-4"
               >
                  Find Recommended Jobs
-                 <span className="material-symbols-outlined">arrow_forward</span>
+                 <ArrowRight className="size-5" />
               </button>
            </div>
         </div>
@@ -308,7 +318,7 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
                       <div className="bg-[#1e2536] rounded-[20px] lg:rounded-[24px] p-5 lg:p-6 space-y-3 lg:space-y-4 border border-primary/10 relative overflow-hidden flex-1">
                         <div className="flex items-center gap-3">
                            <div className="size-7 lg:size-8 rounded-lg bg-primary flex flex-none items-center justify-center text-white shadow-lg shadow-primary/20">
-                              <span className="material-symbols-outlined text-xs lg:text-sm leading-none">sparkles</span>
+                              <Sparkles className="size-4" />
                            </div>
                            <h4 className="text-[8px] lg:text-[9px] font-black uppercase tracking-widest">AI Coach Suggestion</h4>
                         </div>

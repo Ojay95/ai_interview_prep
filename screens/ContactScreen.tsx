@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Mail, Users, MapPin, Check } from 'lucide-react';
 import { Screen } from '../types';
 import { Logo } from '../constants';
 
@@ -42,7 +43,7 @@ const ContactScreen: React.FC<ContactScreenProps> = ({ onNavigate }) => {
           <div className="space-y-8">
             <div className="flex gap-6 items-start">
               <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-primary text-3xl">mail</span>
+                <Mail className="size-7 text-primary" />
               </div>
               <div>
                 <h3 className="text-xl font-bold">Email Support</h3>
@@ -53,7 +54,7 @@ const ContactScreen: React.FC<ContactScreenProps> = ({ onNavigate }) => {
 
             <div className="flex gap-6 items-start">
               <div className="size-14 rounded-2xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-teal-400 text-3xl">groups</span>
+                <Users className="size-7 text-teal-400" />
               </div>
               <div>
                 <h3 className="text-xl font-bold">Enterprise Sales</h3>
@@ -64,7 +65,7 @@ const ContactScreen: React.FC<ContactScreenProps> = ({ onNavigate }) => {
 
             <div className="flex gap-6 items-start">
               <div className="size-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-white text-3xl">location_on</span>
+                <MapPin className="size-7 text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-bold">Headquarters</h3>
@@ -79,7 +80,7 @@ const ContactScreen: React.FC<ContactScreenProps> = ({ onNavigate }) => {
            {submitted ? (
              <div className="text-center py-20 space-y-6 animate-in fade-in zoom-in duration-500">
                 <div className="size-20 bg-teal-400 text-white rounded-full flex items-center justify-center mx-auto shadow-xl shadow-teal-400/20">
-                   <span className="material-symbols-outlined text-4xl">check</span>
+                   <Check className="size-10" />
                 </div>
                 <h2 className="text-3xl font-black">Message Sent!</h2>
                 <p className="text-text-secondary max-w-sm mx-auto">

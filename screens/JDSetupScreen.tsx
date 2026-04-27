@@ -1,5 +1,16 @@
 
 import React, { useState } from 'react';
+import { 
+  X, 
+  Sparkles, 
+  Brain, 
+  Sliders, 
+  Globe, 
+  ChevronDown, 
+  Lock, 
+  Loader2, 
+  Zap 
+} from 'lucide-react';
 import { Screen, User, InterviewConfig } from '../types';
 import { Logo } from '../constants';
 import { analyzeJobDescription } from '../services/geminiService';
@@ -94,15 +105,15 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
           <h2 className="text-sm lg:text-lg font-bold">Session Configuration</h2>
         </div>
         <button onClick={() => onNavigate(Screen.Dashboard)} className="text-text-secondary hover:text-white transition-colors size-8 lg:size-10 rounded-xl hover:bg-white/5 flex items-center justify-center">
-          <span className="material-symbols-outlined text-xl">close</span>
+          <X className="size-5" />
         </button>
       </header>
 
       <main className="max-w-7xl mx-auto w-full px-4 lg:px-10 py-6 lg:py-10 flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-10 overflow-y-auto custom-scrollbar">
         <div className="lg:col-span-8 flex flex-col gap-6 lg:gap-10">
-           <div className="space-y-3 lg:space-y-4">
+           <div className="space-y-3 lg:space-y-4 text-left">
               <div className="flex items-center gap-2 text-primary text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em]">
-                 <span className="material-symbols-outlined text-xs lg:text-sm">auto_awesome</span>
+                 <Sparkles className="size-3 lg:size-4" />
                  <span>Sarah Analysis Engine Ready</span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black tracking-tight leading-tight">Practice Session</h1>
@@ -113,7 +124,7 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
 
            <div className="relative group">
               <div className="absolute top-4 lg:top-6 left-4 lg:left-6 flex items-center gap-2 text-text-secondary pointer-events-none group-focus-within:text-primary transition-colors">
-                 <span className="material-symbols-outlined text-xs lg:text-sm">psychology</span>
+                 <Brain className="size-3 lg:size-4" />
                  <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest">Context & Questions</span>
               </div>
               <textarea 
@@ -131,17 +142,17 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
         <div className="lg:col-span-4">
            <div className="bg-[#1c212b] rounded-[32px] border border-white/5 p-6 lg:p-8 flex flex-col gap-8 shadow-2xl sticky top-4">
               <div className="flex items-center gap-3 border-b border-white/5 pb-6">
-                 <span className="material-symbols-outlined text-primary">settings_input_component</span>
+                 <Sliders className="size-5 text-primary" />
                  <h2 className="text-white text-base lg:text-lg font-bold">Calibration</h2>
               </div>
 
               {/* Language Selector */}
               <div className="space-y-4">
                  <label className="text-text-secondary text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">language</span>
+                    <Globe className="size-3 lg:size-4" />
                     Interview Language
                  </label>
-                 <div className="relative group">
+                 <div className="relative group text-left">
                     <select 
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
@@ -151,7 +162,7 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
                          <option key={lang.code} value={lang.name}>{lang.name}</option>
                        ))}
                     </select>
-                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary text-sm pointer-events-none">expand_more</span>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary size-4 pointer-events-none" />
                  </div>
               </div>
 
@@ -188,7 +199,7 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
                    {!isProOrElite && (
                      <div className="mt-4 p-4 rounded-xl bg-orange-500/5 border border-orange-500/10 flex flex-col gap-3">
                         <div className="flex items-center gap-2 text-orange-500 font-bold text-[10px] uppercase tracking-widest">
-                           <span className="material-symbols-outlined text-sm">lock</span>
+                           <Lock className="size-3" />
                            Basic Tier Limit
                         </div>
                         <p className="text-text-secondary text-[10px] leading-relaxed">Upgrade for 45-60 min deep sessions.</p>
@@ -209,7 +220,7 @@ const JDSetupScreen: React.FC<JDSetupScreenProps> = ({ user, onNavigate }) => {
                   disabled={!context.trim() || isGenerating}
                   className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${!context.trim() || isGenerating ? 'bg-[#1c212b] text-text-secondary opacity-50 cursor-not-allowed' : 'bg-primary text-white shadow-2xl shadow-primary/30 hover:translate-y-[-2px] active:scale-[0.98]'}`}
                 >
-                  {isGenerating ? <span className="material-symbols-outlined animate-spin text-xl">refresh</span> : <span className="material-symbols-outlined text-lg">bolt</span>}
+                  {isGenerating ? <Loader2 className="size-5 animate-spin" /> : <Zap className="size-5" />}
                   {isGenerating ? 'Analyzing...' : 'Start Session'}
                 </button>
               </div>

@@ -1,5 +1,27 @@
 
 import React, { useEffect, useState } from 'react';
+import { 
+  LayoutGrid, 
+  FileText, 
+  Briefcase, 
+  History, 
+  BarChart3, 
+  Settings, 
+  LogOut, 
+  X, 
+  Menu, 
+  Brain, 
+  Flame, 
+  Mic, 
+  CheckSquare, 
+  ThumbsUp, 
+  Target, 
+  TrendingUp, 
+  Lightbulb, 
+  Code2, 
+  Layout, 
+  Eye 
+} from 'lucide-react';
 import { Screen, User } from '../types';
 
 interface DashboardScreenProps {
@@ -44,7 +66,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
       score: 8.5, 
       scoreMax: 10,
       color: 'bg-green-500',
-      icon: 'code'
+      icon: <Code2 className="size-5" />
     },
     { 
       role: 'Product Manager', 
@@ -54,7 +76,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
       score: 6.2, 
       scoreMax: 10,
       color: 'bg-yellow-500',
-      icon: 'apps'
+      icon: <Layout className="size-5" />
     }
   ];
 
@@ -74,7 +96,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
           <div className="flex items-center justify-between mb-10 px-2">
             <div className="flex items-center gap-3">
               <div className="bg-primary p-2 rounded-lg text-white">
-                <span className="material-symbols-outlined text-xl">psychology</span>
+                <Brain className="size-5" />
               </div>
               <div>
                 <h1 className="font-bold text-sm tracking-tight leading-none">AI Interviewer</h1>
@@ -84,7 +106,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               </div>
             </div>
             <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-text-secondary">
-              <span className="material-symbols-outlined">close</span>
+              <X className="size-5" />
             </button>
           </div>
 
@@ -93,36 +115,36 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               onClick={() => { onNavigate(Screen.Dashboard); setIsSidebarOpen(false); }}
               className="flex items-center w-full gap-3 px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20"
             >
-              <span className="material-symbols-outlined text-[20px]">grid_view</span>
+              <LayoutGrid className="size-5" />
               Dashboard
             </button>
             <button 
               onClick={() => { onNavigate(Screen.CVLanding); setIsSidebarOpen(false); }}
               className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium"
             >
-              <span className="material-symbols-outlined text-[20px]">description</span>
+              <FileText className="size-5" />
               CV Analysis
             </button>
             <button 
               onClick={() => { onNavigate(Screen.JobBoard); setIsSidebarOpen(false); }}
               className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium"
             >
-              <span className="material-symbols-outlined text-[20px]">work</span>
+              <Briefcase className="size-5" />
               Job Board
             </button>
             <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium">
-              <span className="material-symbols-outlined text-[20px]">history</span>
+              <History className="size-5" />
               History
             </button>
             <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium">
-              <span className="material-symbols-outlined text-[20px]">analytics</span>
+              <BarChart3 className="size-5" />
               Analytics
             </button>
             <button 
               onClick={() => { onNavigate(Screen.Settings); setIsSidebarOpen(false); }}
               className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-white/5 transition-all text-sm font-medium"
             >
-              <span className="material-symbols-outlined text-[20px]">settings</span>
+              <Settings className="size-5" />
               Settings
             </button>
           </nav>
@@ -157,7 +179,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               <p className="text-xs text-text-secondary truncate mt-1">{user?.email || 'alex@example.com'}</p>
             </div>
             <button onClick={onLogout} className="text-text-secondary hover:text-white transition-colors">
-              <span className="material-symbols-outlined text-[20px]">logout</span>
+              <LogOut className="size-5" />
             </button>
           </div>
         </div>
@@ -167,11 +189,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
       <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-14 custom-scrollbar space-y-8 md:space-y-12 relative">
         <div className="lg:hidden flex items-center justify-between mb-4">
           <button onClick={() => setIsSidebarOpen(true)} className="size-10 rounded-xl bg-[#1c212b] border border-white/5 flex items-center justify-center">
-            <span className="material-symbols-outlined">menu</span>
+            <Menu className="size-6" />
           </button>
           <div className="flex items-center gap-2">
             <div className="bg-primary p-1.5 rounded-lg text-white">
-              <span className="material-symbols-outlined text-sm">psychology</span>
+              <Brain className="size-4" />
             </div>
             <span className="font-bold text-sm">MockInterview.ai</span>
           </div>
@@ -184,7 +206,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
           <div className="w-full lg:w-auto">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-2 leading-tight">Ready to ace it, {user?.name?.split(' ')[0] || 'Alex'}?</h2>
             <div className="flex items-center gap-2 text-text-secondary">
-              <span className="material-symbols-outlined text-orange-500 text-lg md:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+              <Flame className="size-5 text-orange-500" fill="currentColor" />
               <p className="text-sm font-medium">You're on a 3-day streak! Keep going.</p>
             </div>
           </div>
@@ -193,21 +215,21 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
               onClick={() => onNavigate(Screen.JobBoard)}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-xs font-bold transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg">work</span>
+              <Briefcase className="size-4" />
               Job Board
             </button>
             <button 
               onClick={() => handleStartInterview(Screen.JDSetup)}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1c212b] border border-white/10 hover:bg-white/5 text-white text-xs font-bold transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg">description</span>
+              <FileText className="size-4" />
               Job Description
             </button>
             <button 
               onClick={() => handleStartInterview(Screen.Onboarding)}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-xl shadow-primary/30 active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg">mic</span>
+              <Mic className="size-4" />
               Start Interview
             </button>
           </div>
@@ -216,15 +238,15 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
         {/* Performance Grid */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
            {[
-             { label: 'Total Practice', val: '12', inc: '+2 wk', color: 'text-primary', icon: 'assignment_turned_in' },
-             { label: 'Avg. Score', val: '78', inc: 'Top 20%', color: 'text-purple-400', icon: 'analytics' },
-             { label: 'Strongest', val: 'System Design', inc: 'Stable', color: 'text-green-500', icon: 'thumb_up' },
-             { label: 'Improvement', val: 'Behavioral', inc: 'Critical', color: 'text-orange-500', icon: 'track_changes' }
-           ].map((stat, i) => (
-             <div key={i} className="bg-[#1c212b] p-4 md:p-8 rounded-2xl md:rounded-[32px] border border-white/5 shadow-xl space-y-4 md:space-y-6">
+             { label: 'Total Practice', val: '12', inc: '+2 wk', color: 'text-primary', icon: <CheckSquare className="size-5" /> },
+             { label: 'Avg. Score', val: '78', inc: 'Top 20%', color: 'text-purple-400', icon: <BarChart3 className="size-5" /> },
+             { label: 'Strongest', val: 'System Design', inc: 'Stable', color: 'text-green-500', icon: <ThumbsUp className="size-5" /> },
+             { label: 'Improvement', val: 'Behavioral', inc: 'Critical', color: 'text-orange-500', icon: <Target className="size-5" /> }
+           ].map((stat) => (
+             <div key={stat.label} className="bg-[#1c212b] p-4 md:p-8 rounded-2xl md:rounded-[32px] border border-white/5 shadow-xl space-y-4 md:space-y-6">
                 <div className="flex items-center justify-between">
                    <div className={`size-8 md:size-10 rounded-lg bg-white/5 ${stat.color} flex items-center justify-center`}>
-                      <span className="material-symbols-outlined text-lg md:text-xl">{stat.icon}</span>
+                      {stat.icon}
                    </div>
                    <div className="text-[10px] font-black uppercase tracking-widest opacity-60">{stat.inc}</div>
                 </div>
@@ -245,7 +267,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                    <p className="text-sm text-text-secondary">Progress over last 6 months</p>
                 </div>
                 <div className="px-2 md:px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                   <span className="material-symbols-outlined text-sm">trending_up</span>
+                   <TrendingUp className="size-3" />
                    +12%
                 </div>
              </div>
@@ -260,9 +282,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
           </div>
 
           <div className="xl:col-span-4 bg-primary rounded-2xl md:rounded-[40px] p-8 md:p-12 flex flex-col shadow-2xl relative overflow-hidden">
-             <div className="relative z-10 flex flex-col h-full">
+             <div className="relative z-10 flex flex-col h-full text-left">
                 <div className="size-10 md:size-12 bg-white/10 rounded-2xl flex items-center justify-center text-white mb-6 md:mb-10">
-                   <span className="material-symbols-outlined text-xl">tips_and_updates</span>
+                   <Lightbulb className="size-6" />
                 </div>
                 <h3 className="text-2xl md:text-3xl font-black text-white mb-4">Pro Tip</h3>
                 <p className="text-white/80 text-sm md:text-lg leading-relaxed font-medium mb-auto">
@@ -297,7 +319,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                     <td className="py-6">
                       <div className="flex items-center gap-4">
                         <div className="size-8 md:size-10 bg-black/20 text-text-secondary rounded-lg flex items-center justify-center shrink-0 border border-white/5">
-                           <span className="material-symbols-outlined text-lg">{session.icon}</span>
+                           {session.icon}
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm md:text-base font-bold text-white truncate">{session.role}</span>
@@ -316,7 +338,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                     </td>
                     <td className="py-6 text-right">
                       <button className="size-8 md:size-10 rounded-lg bg-black/20 text-text-secondary hover:text-white flex items-center justify-center ml-auto border border-white/5">
-                        <span className="material-symbols-outlined text-[18px]">visibility</span>
+                        <Eye className="size-5" />
                       </button>
                     </td>
                   </tr>

@@ -8,60 +8,70 @@ export const jobService = {
   async getJobSuggestions(role: string, location: string = 'Remote', page: number = 1): Promise<{ jobs: Job[], totalCount: number }> {
     try {
       const prompt = `
-        Act as a professional job scraper and recruiter. 
-        Find and generate 5 highly realistic and diverse job listings for the role of "${role}" in "${location}".
+        Act as a professional real-time job scraper and verification engine. 
+        Your goal is to find 10 ACTIVE, HIGH-INTEGRITY job listings for: "${role}" in "${location}".
         This is page ${page} of the results.
-        These should look like they were scraped from Indeed, Glassdoor, or LinkedIn.
-        Include a mix of seniority levels and company types.
         
-        Return the data as a JSON object with the following structure:
+        CRITICAL LINK INTEGRITY CONSTRAINTS:
+        1. NO HALLUCINATION: You are FORBIDDEN from making up URLs. Every "externalUrl" MUST be a real, link that leads directly to the job post.
+        2. SOURCE PRIORITY: Prioritize links from Greenhouse.io, Lever.co, Workday, LinkedIn, and official company career pages. 
+        3. AVOID AGGREGATOR TRAPS: Avoid outdated links from general search results that lead to "Page Not Found". If you find a job on a search engine, try to find the official career site link for that specific job instead.
+        4. VERIFICATION: Use the googleSearch tool to cross-reference the job and company to ensure the listing is still active. If a job was posted more than 7 days ago, DISCARD it unless it is a high-quality verifiable link.
+        5. FRESHNESS: Jobs must be posted within the last 7 days.
+        6. LATENCY: Be concise. Return results immediately once found.
+
+        Return a valid JSON object:
         {
           "jobs": [
             {
-              "id": "string (unique)",
+              "id": "string",
               "title": "string",
               "company": "string",
               "location": "string",
-              "salary": "string (e.g. $120k - $150k)",
-              "type": "string (Full-time, Contract, etc.)",
-              "description": "string (FULL detailed job description, including responsibilities, about the company, and benefits. Minimum 500 characters if possible)",
-              "requirements": ["string", "string"],
-              "postedDate": "string (e.g. 2 days ago)",
-              "source": "string (Indeed, Glassdoor, LinkedIn, etc.)",
-              "externalUrl": "string (MUST be a real, direct link to the job posting or a specific search result on that platform)",
-              "matchScore": number (1-100 based on how well it fits the role),
-              "aiReasoning": "string (1 sentence explaining why this is a good match)"
+              "salary": "string",
+              "type": "string",
+              "description": "string (brief summary, ~300 chars)",
+              "requirements": ["string"],
+              "postedDate": "string (e.g., '2 days ago' or 'Apr 18')",
+              "source": "string (e.g. 'Company Career Page', 'LinkedIn', 'Greenhouse')",
+              "externalUrl": "string (REAL DIRECT APPLY LINK)",
+              "matchScore": number,
+              "aiReasoning": "string (short)"
             }
           ],
-          "totalCount": number (estimate the total number of relevant jobs available, e.g. 50)
+          "totalCount": number (total number of jobs matching the query across the web, e.g., 85)
         }
-        
-        Use the googleSearch tool to find ACTUAL current job openings. Do not hallucinate URLs.
-        
-        Ensure the JSON is valid and only return the JSON object.
       `;
 
       const response = await genAI.models.generateContent({
         model: GEMINI_MODELS.TEXT_ANALYSIS,
         contents: prompt,
         config: {
-          tools: [{ googleSearch: {} }]
+          tools: [{ googleSearch: {} }],
+          responseMimeType: 'application/json'
         }
       });
       
       const text = response.text || '';
       
-      // Clean up the response text to ensure it's valid JSON
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const result = JSON.parse(jsonMatch[0]);
+      try {
+        const result = JSON.parse(text);
         return {
           jobs: result.jobs || [],
           totalCount: result.totalCount || 0
         };
+      } catch {
+        // Fallback for non-strict JSON
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          return {
+            jobs: result.jobs || [],
+            totalCount: result.totalCount || 0
+          };
+        }
+        throw new Error('Failed to parse job suggestions');
       }
-      
-      throw new Error('Failed to parse job suggestions');
     } catch (error) {
       console.error('Error fetching job suggestions:', error);
       return { jobs: [], totalCount: 0 };

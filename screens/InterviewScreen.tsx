@@ -1,5 +1,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  AudioLines, 
+  RotateCw, 
+  Mic, 
+  MicOff, 
+  Play, 
+  Pause, 
+  PhoneOff 
+} from 'lucide-react';
 import { Screen, User, InterviewConfig } from '../types';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { floatTo16BitPCM, encodeBase64, decodeBase64, decodeAudioData } from '../services/geminiService';
@@ -280,7 +289,7 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
         <div className="flex items-center gap-3 lg:gap-6">
           <div className="flex items-center gap-2">
             <div className="size-7 lg:size-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-lg lg:text-xl">graphic_eq</span>
+              <AudioLines className="size-4 lg:size-5 text-white" />
             </div>
             <span className="text-sm lg:text-lg font-bold tracking-tight">MockInterview.ai</span>
           </div>
@@ -302,9 +311,11 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
       {!isSessionActive ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 lg:space-y-8">
            <div className="size-20 lg:size-24 bg-primary/10 rounded-[24px] lg:rounded-[32px] flex items-center justify-center border border-primary/20">
-              <span className={`material-symbols-outlined text-4xl lg:text-5xl text-primary ${isConnecting ? 'animate-spin' : ''}`}>
-                 {isConnecting ? 'sync' : 'mic'}
-              </span>
+              {isConnecting ? (
+                <RotateCw className="size-10 lg:size-12 text-primary animate-spin" />
+              ) : (
+                <Mic className="size-10 lg:size-12 text-primary" />
+              )}
            </div>
            <div className="text-center space-y-2">
               <h2 className="text-2xl lg:text-3xl font-black">Sarah is ready</h2>
@@ -354,7 +365,7 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
               {/* Audio Visualizer Footer */}
               <div className="h-14 lg:h-20 bg-black/40 backdrop-blur-md border-t border-white/5 flex items-center px-4 lg:px-8 gap-4 lg:gap-6 shrink-0">
                 <div className={`size-8 lg:size-10 rounded-full flex items-center justify-center border transition-all ${isMuted ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-primary/10 border-primary/20 text-primary'}`}>
-                    <span className="material-symbols-outlined text-lg lg:text-xl">{isMuted ? 'mic_off' : 'mic'}</span>
+                    {isMuted ? <MicOff className="size-4 lg:size-5" /> : <Mic className="size-4 lg:size-5" />}
                 </div>
                 <div className="flex-1 flex items-center gap-1 h-4 lg:h-6 justify-center">
                     {[...Array(16)].map((_, i) => (
@@ -387,13 +398,13 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
 
              <div className="flex-1 lg:flex-none bg-[#1c212b] rounded-2xl lg:rounded-3xl border border-white/5 p-2 lg:p-3 flex items-center justify-around shadow-2xl shrink-0">
                 <button onClick={() => setIsMuted(!isMuted)} className={`size-10 lg:size-12 rounded-xl lg:rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-text-secondary hover:text-white'}`}>
-                   <span className="material-symbols-outlined text-xl lg:text-2xl">{isMuted ? 'mic_off' : 'mic'}</span>
+                   {isMuted ? <MicOff className="size-5 lg:size-6" /> : <Mic className="size-5 lg:size-6" />}
                 </button>
                 <button onClick={() => setIsPaused(!isPaused)} className={`size-10 lg:size-12 rounded-xl lg:rounded-2xl flex items-center justify-center transition-all ${isPaused ? 'bg-primary/20 text-primary' : 'bg-white/5 text-text-secondary hover:text-white'}`}>
-                   <span className="material-symbols-outlined text-xl lg:text-2xl">{isPaused ? 'play_arrow' : 'pause'}</span>
+                   {isPaused ? <Play className="size-5 lg:size-6" /> : <Pause className="size-5 lg:size-6" />}
                 </button>
                 <button onClick={handleFinish} className="size-10 lg:size-12 rounded-xl lg:rounded-2xl bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center">
-                   <span className="material-symbols-outlined text-xl lg:text-2xl">call_end</span>
+                   <PhoneOff className="size-5 lg:size-6" />
                 </button>
              </div>
           </section>

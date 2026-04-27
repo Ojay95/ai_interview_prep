@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { LayoutGrid, Quote } from 'lucide-react';
 import { Screen } from '../types';
 import { Logo } from '../constants';
 import { useAuthStore } from '../store/useAuthStore';
@@ -122,7 +123,7 @@ const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate }) => {
                 Google
               </button>
               <button className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-surface-dark py-2.5 px-4 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#252833] transition-colors">
-                <span className="material-symbols-outlined text-[20px]">hub</span>
+                <LayoutGrid className="size-5" />
                 GitHub
               </button>
             </div>
@@ -145,7 +146,7 @@ const SignInScreen: React.FC<SignInScreenProps> = ({ onNavigate }) => {
         <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24 w-full h-full">
           <div className="mb-10 max-w-lg">
             <div className="size-12 rounded-2xl bg-primary flex items-center justify-center text-white mb-8">
-               <span className="material-symbols-outlined text-3xl">format_quote</span>
+               <Quote className="size-7 fill-white" />
             </div>
             <h2 className="text-3xl xl:text-4xl font-bold text-white mb-6 leading-tight italic">
               "The voice feedback was so accurate it felt like I was talking to a real human recruiter. Helped me land my role at Stripe."

@@ -1,5 +1,30 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Loader2, 
+  Download, 
+  UploadCloud, 
+  Edit3, 
+  Paperclip, 
+  FileText, 
+  CheckCircle2, 
+  Zap, 
+  Brain, 
+  Mic, 
+  TrendingUp, 
+  CheckSquare, 
+  AlertTriangle, 
+  ShieldCheck, 
+  Sparkles, 
+  Plus, 
+  Check, 
+  SearchCode, 
+  ExternalLink, 
+  Rocket, 
+  Copy, 
+  Briefcase, 
+  ArrowRight 
+} from 'lucide-react';
 import { User, Screen } from '../types';
 import { Logo } from '../constants';
 import { analyzeResumeMatch } from '../services/geminiService';
@@ -98,13 +123,13 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
   };
 
   const currentStats = analysisResult ? [
-    { label: 'MATCH SCORE', value: `${analysisResult.matchScore}%`, sub: analysisResult.verdict, icon: 'trending_up', color: 'text-primary' },
-    { label: 'KEYWORDS MATCHED', value: analysisResult.matchedKeywords?.length || 0, sub: 'Identified skills', icon: 'check_box', color: 'text-green-500' },
-    { label: 'MISSING SKILLS', value: analysisResult.missingKeywords?.length || 0, sub: 'Gap Analysis', icon: 'warning', color: 'text-orange-500' }
+    { label: 'MATCH SCORE', value: `${analysisResult.matchScore}%`, sub: analysisResult.verdict, icon: TrendingUp, color: 'text-primary' },
+    { label: 'KEYWORDS MATCHED', value: analysisResult.matchedKeywords?.length || 0, sub: 'Identified skills', icon: CheckSquare, color: 'text-green-500' },
+    { label: 'MISSING SKILLS', value: analysisResult.missingKeywords?.length || 0, sub: 'Gap Analysis', icon: AlertTriangle, color: 'text-orange-500' }
   ] : [
-    { label: 'MATCH SCORE', value: '--', sub: 'Paste JD to start', icon: 'trending_up', color: 'text-primary' },
-    { label: 'KEYWORDS MATCHED', value: '0', sub: 'Ready to scan', icon: 'check_box', color: 'text-green-500' },
-    { label: 'CRITICAL MISSING', value: '0', sub: 'Ready to scan', icon: 'warning', color: 'text-orange-500' }
+    { label: 'MATCH SCORE', value: '--', sub: 'Paste JD to start', icon: TrendingUp, color: 'text-primary' },
+    { label: 'KEYWORDS MATCHED', value: '0', sub: 'Ready to scan', icon: CheckSquare, color: 'text-green-500' },
+    { label: 'CRITICAL MISSING', value: '0', sub: 'Ready to scan', icon: AlertTriangle, color: 'text-orange-500' }
   ];
 
   return (
@@ -140,19 +165,19 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-6 py-2 lg:py-3 rounded-xl bg-white/5 border border-white/10 text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors disabled:opacity-50"
                  >
                     {isDownloading ? (
-                      <span className="material-symbols-outlined animate-spin text-sm">refresh</span>
+                      <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      <span className="material-symbols-outlined text-sm">download</span>
+                      <Download className="size-4" />
                     )}
                     <span className="hidden sm:inline">{isDownloading ? 'Downloading...' : 'Download Report'}</span>
                     <span className="sm:hidden">{isDownloading ? '...' : 'PNG'}</span>
                  </button>
                )}
                <button onClick={() => onNavigate(Screen.CVLanding)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-6 py-2 lg:py-3 rounded-xl bg-white/5 border border-white/10 text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors">
-                  <span className="material-symbols-outlined text-sm">upload</span> <span className="hidden sm:inline">Update Resume</span><span className="sm:hidden">Update</span>
+                  <UploadCloud className="size-4" /> <span className="hidden sm:inline">Update Resume</span><span className="sm:hidden">Update</span>
                </button>
                <button onClick={() => onNavigate(Screen.CVEditor)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-6 py-2 lg:py-3 rounded-xl bg-primary text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-hover transition-colors">
-                  <span className="material-symbols-outlined text-sm">edit</span> <span className="hidden sm:inline">Edit Resume</span><span className="sm:hidden">Edit</span>
+                  <Edit3 className="size-4" /> <span className="hidden sm:inline">Edit Resume</span><span className="sm:hidden">Edit</span>
                </button>
             </div>
           </div>
@@ -164,21 +189,21 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                {/* JD Input Card */}
                <div className="bg-[#1c212b] rounded-[24px] md:rounded-[32px] border border-white/5 p-5 md:p-8 space-y-6 shadow-2xl">
                   <div className="flex items-center gap-3 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-60">
-                     <span className="material-symbols-outlined text-sm">attachment</span> Current Resume
+                     <Paperclip className="size-4" /> Current Resume
                   </div>
                   <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between overflow-hidden group hover:border-primary/30 transition-colors">
                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="material-symbols-outlined text-primary shrink-0">description</span>
+                        <FileText className="size-4 text-primary shrink-0" />
                         <div className="min-w-0">
                             <span className="text-[10px] md:text-xs font-bold truncate block">{fileName}</span>
                             <span className="text-[9px] text-gray-500 truncate block">Ready for analysis</span>
                         </div>
                      </div>
-                     <span className="material-symbols-outlined text-green-500 text-sm shrink-0">check_circle</span>
+                     <CheckCircle2 className="size-4 text-green-500 shrink-0" />
                   </div>
 
                   <div className="flex items-center gap-3 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-60 pt-2">
-                     <span className="material-symbols-outlined text-sm">description</span> Target Job Description
+                     <FileText className="size-4" /> Target Job Description
                   </div>
                   <textarea 
                     className="w-full h-[180px] md:h-[300px] bg-black/40 border border-white/5 rounded-xl md:rounded-2xl p-4 text-xs md:text-sm text-text-secondary focus:border-primary focus:ring-0 resize-none transition-all placeholder:text-gray-700"
@@ -191,7 +216,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                     disabled={!jd.trim() || isAnalyzing}
                     className="w-full py-4 rounded-xl md:rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] shadow-xl shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 hover:bg-primary-hover transition-all"
                   >
-                     {isAnalyzing ? <span className="material-symbols-outlined animate-spin text-lg">refresh</span> : <span className="material-symbols-outlined text-lg">bolt</span>}
+                     {isAnalyzing ? <Loader2 className="size-5 animate-spin" /> : <Zap className="size-5" />}
                      {isAnalyzing ? 'Analyzing Alignment...' : 'Analyze Match'}
                   </button>
                </div>
@@ -201,7 +226,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                   <div className="bg-[#1c212b] rounded-[24px] md:rounded-[32px] border border-white/5 p-6 md:p-8 space-y-6 shadow-xl animate-in fade-in slide-in-from-left-4 duration-500">
                      <div className="flex items-center gap-3">
                         <div className="size-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-                           <span className="material-symbols-outlined">psychology</span>
+                           <Brain className="size-6" />
                         </div>
                         <div>
                            <h4 className="text-sm md:text-base font-bold">Interview Prep Guide</h4>
@@ -220,7 +245,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                         onClick={() => onNavigate(Screen.JDSetup)}
                         className="w-full py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
                      >
-                        <span className="material-symbols-outlined text-sm">mic</span> Start Mock Interview
+                        <Mic className="size-4" /> Start Mock Interview
                      </button>
                   </div>
                )}
@@ -235,7 +260,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                       <div key={i} className="bg-[#1c212b] p-5 md:p-6 rounded-2xl md:rounded-[28px] border border-white/5 shadow-xl space-y-3 md:space-y-4">
                          <div className="flex items-center justify-between">
                             <div className={`size-8 md:size-10 rounded-lg bg-white/5 ${s.color} flex items-center justify-center`}>
-                               <span className="material-symbols-outlined text-lg md:text-xl">{s.icon}</span>
+                               <s.icon className="size-5 md:size-6" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-widest text-text-secondary opacity-40">{s.label}</span>
                          </div>
@@ -253,7 +278,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                       {/* Strategic Verdict Card */}
                       <div className="bg-gradient-to-br from-[#1c212b] to-[#12151c] rounded-[24px] md:rounded-[32px] border border-primary/20 p-6 md:p-10 shadow-2xl relative overflow-hidden group">
                          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <span className="material-symbols-outlined text-[120px]">verified</span>
+                            <ShieldCheck className="size-32" />
                          </div>
                          <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center">
                             <div className="relative size-24 md:size-40 shrink-0">
@@ -293,7 +318,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                       {analysisResult.resumeSummary && (
                         <div className="bg-[#1c212b] rounded-[24px] md:rounded-[32px] border border-white/5 p-6 md:p-8 space-y-4 shadow-xl">
                           <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary flex items-center gap-2">
-                            <span className="material-symbols-outlined text-sm text-primary">auto_awesome</span> AI Resume Summary
+                            <Sparkles className="size-4 text-primary" /> AI Resume Summary
                           </h4>
                           <p className="text-sm md:text-base text-gray-300 leading-relaxed">
                             {analysisResult.resumeSummary}
@@ -305,12 +330,12 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div className="bg-[#1c212b] rounded-[24px] md:rounded-[32px] border border-white/5 p-6 md:p-8 space-y-6 shadow-xl">
                             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary flex items-center gap-2">
-                               <span className="material-symbols-outlined text-sm text-orange-500">warning</span> Skill Gap Analysis
+                               <AlertTriangle className="size-4 text-orange-500" /> Skill Gap Analysis
                             </h4>
                             <div className="flex flex-wrap gap-2">
                                {analysisResult.missingKeywords?.map((k: string, i: number) => (
                                   <div key={i} className="px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 group hover:bg-orange-500/20 transition-all cursor-default">
-                                     {k} <span className="material-symbols-outlined text-xs">add</span>
+                                     {k} <Plus className="size-3" />
                                   </div>
                                ))}
                                {(!analysisResult.missingKeywords || analysisResult.missingKeywords.length === 0) && (
@@ -321,12 +346,12 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
 
                          <div className="bg-[#1c212b] rounded-[24px] md:rounded-[32px] border border-white/5 p-6 md:p-8 space-y-6 shadow-xl">
                             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary flex items-center gap-2">
-                               <span className="material-symbols-outlined text-sm text-green-500">check_circle</span> Matched Strengths
+                               <CheckCircle2 className="size-4 text-green-500" /> Matched Strengths
                             </h4>
                             <div className="flex flex-wrap gap-2">
                                {analysisResult.matchedKeywords?.map((k: string, i: number) => (
                                   <div key={i} className="px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 cursor-default">
-                                     {k} <span className="material-symbols-outlined text-xs">check</span>
+                                     {k} <Check className="size-3" />
                                   </div>
                                ))}
                                {(!analysisResult.matchedKeywords || analysisResult.matchedKeywords.length === 0) && (
@@ -340,7 +365,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                   ) : !isAnalyzing && (
                     <div className="h-[400px] md:h-[500px] flex flex-col items-center justify-center text-center p-8 md:p-12 bg-[#1c212b] rounded-[24px] md:rounded-[32px] border border-white/5 border-dashed">
                        <div className="size-16 md:size-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                          <span className="material-symbols-outlined text-3xl md:text-4xl text-text-secondary opacity-20">content_paste_search</span>
+                          <SearchCode className="size-16 md:size-20 text-text-secondary opacity-20" />
                        </div>
                        <h3 className="text-lg md:text-xl font-bold mb-2">Ready to scan</h3>
                        <p className="text-xs md:text-sm text-text-secondary max-w-sm">Paste a job description to see alignment and get an interview roadmap.</p>
@@ -358,7 +383,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                     <p className="text-text-secondary text-[10px] md:text-sm">Strategic edits to boost your ATS score and recruiter appeal.</p>
                  </div>
                  <button onClick={() => onNavigate(Screen.CVEditor)} className="hidden sm:flex items-center gap-2 text-primary font-bold text-sm hover:underline shrink-0">
-                    Open Editor <span className="material-symbols-outlined text-sm">open_in_new</span>
+                    Open Editor <ExternalLink className="size-4" />
                  </button>
               </div>
               
@@ -368,7 +393,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                       <div className="flex items-center justify-between mb-4 md:mb-6">
                          <div className="flex items-center gap-3 md:gap-4">
                             <div className={`size-10 md:size-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${rec.impact === 'High' ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/5 text-text-secondary'}`}>
-                               <span className="material-symbols-outlined text-lg md:text-xl">rocket_launch</span>
+                               <Rocket className="size-5 md:size-6" />
                             </div>
                             <div className="min-w-0">
                                <h5 className="font-bold text-xs md:text-base leading-tight">{rec.title}</h5>
@@ -401,9 +426,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                                  className="shrink-0 text-primary hover:text-primary-hover transition-colors flex items-center gap-1"
                                  title="Copy to clipboard"
                                >
-                                 <span className="material-symbols-outlined text-sm">
-                                   {copiedIndex === i ? 'check' : 'content_copy'}
-                                 </span>
+                                 {copiedIndex === i ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
                                  {copiedIndex === i && <span className="text-[8px] font-bold uppercase tracking-widest">Copied</span>}
                                </button>
                              </div>
@@ -417,7 +440,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
               {/* Find Jobs Prompt */}
               <div className="bg-gradient-to-br from-indigo-600 to-primary rounded-[24px] md:rounded-[32px] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden group mt-12">
                  <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                    <span className="material-symbols-outlined text-[200px]">work</span>
+                    <Briefcase className="size-40 md:size-52" />
                  </div>
                  <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="space-y-4 text-center md:text-left">
@@ -431,7 +454,7 @@ const CVAnalysisScreen: React.FC<CVAnalysisScreenProps> = ({ user, onNavigate })
                        className="px-10 py-5 bg-white text-primary font-black rounded-2xl text-xs md:text-sm uppercase tracking-widest hover:bg-opacity-90 transition-all active:scale-95 shadow-2xl flex items-center gap-3"
                     >
                        Find Recommended Jobs
-                       <span className="material-symbols-outlined">arrow_forward</span>
+                       <ArrowRight className="size-5" />
                     </button>
                  </div>
               </div>

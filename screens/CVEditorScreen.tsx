@@ -1,5 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
+import { 
+  FileText, 
+  Undo2, 
+  Redo2, 
+  Download, 
+  Edit3, 
+  Eye, 
+  Palette, 
+  FileEdit, 
+  LayoutGrid, 
+  CheckCircle2, 
+  Type as TypeIcon 
+} from 'lucide-react';
 import { Screen, User } from '../types';
 
 interface CVEditorScreenProps {
@@ -36,7 +49,7 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
       <header className="flex items-center justify-between px-4 md:px-6 lg:px-10 py-3 border-b border-white/5 bg-[#0d111a] shrink-0 z-50">
         <div className="flex items-center gap-3 md:gap-6">
            <div className="flex items-center gap-2 md:gap-3 cursor-pointer" onClick={() => onNavigate(Screen.Dashboard)}>
-              <span className="material-symbols-outlined text-primary text-xl md:text-2xl">description</span>
+              <FileText className="size-5 md:size-6 text-primary" />
               <div className="min-w-0">
                  <h2 className="text-[10px] md:text-sm font-bold leading-none truncate max-w-[100px] md:max-w-none">Resume Editor</h2>
                  <p className="text-[7px] md:text-[9px] text-text-secondary mt-1">Edited 2m ago</p>
@@ -51,13 +64,13 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
            </nav>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
-           <div className="hidden sm:flex items-center gap-1 mr-2">
-              <button className="size-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"><span className="material-symbols-outlined text-lg">undo</span></button>
-              <button className="size-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"><span className="material-symbols-outlined text-lg">redo</span></button>
-           </div>
+            <div className="hidden sm:flex items-center gap-1 mr-2">
+               <button className="size-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"><Undo2 className="size-4" /></button>
+               <button className="size-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"><Redo2 className="size-4" /></button>
+            </div>
            <button className="hidden md:block px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Save Draft</button>
            <button className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-primary text-white text-[8px] md:text-xs font-black uppercase tracking-widest hover:bg-primary-hover shadow-xl shadow-primary/20 transition-all flex items-center gap-1.5 md:gap-2">
-              <span className="material-symbols-outlined text-xs md:text-sm">download</span>
+              <Download className="size-4" />
               <span>Export</span>
            </button>
            <div className="size-7 md:size-8 rounded-full border border-white/10 overflow-hidden bg-slate-700 ml-1">
@@ -69,10 +82,10 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
       {/* Mobile View Toggle */}
       <div className="lg:hidden flex border-b border-white/5 bg-[#11131a] shrink-0">
          <button onClick={() => setViewMode('edit')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${viewMode === 'edit' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>
-            <span className="material-symbols-outlined text-sm">edit</span> Edit
+            <Edit3 className="size-4" /> Edit
          </button>
          <button onClick={() => setViewMode('preview')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${viewMode === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary'}`}>
-            <span className="material-symbols-outlined text-sm">visibility</span> Preview
+            <Eye className="size-4" /> Preview
          </button>
       </div>
 
@@ -86,7 +99,7 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeTab === tab ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-white'}`}
                  >
-                    <span className="material-symbols-outlined text-sm">{tab === 'Design' ? 'palette' : 'edit_note'}</span>
+                    {tab === 'Design' ? <Palette className="size-4" /> : <FileEdit className="size-4" />}
                     {tab}
                  </button>
                ))}
@@ -96,7 +109,7 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
                <div className="space-y-4 md:space-y-6">
                   <div className="flex items-center justify-between">
                      <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">grid_view</span> Templates
+                        <LayoutGrid className="size-4" /> Templates
                      </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-3 md:gap-4">
@@ -107,7 +120,7 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
                        <div key={t.name} onClick={() => setTemplate(t.name)} className="space-y-2 cursor-pointer group">
                           <div className={`aspect-[3/4] rounded-xl overflow-hidden border-2 relative transition-all ${template === t.name ? 'border-primary shadow-lg shadow-primary/20' : 'border-white/5 grayscale group-hover:grayscale-0 group-hover:border-white/20'}`}>
                              <img src={t.img} alt={t.name} className="w-full h-full object-cover" />
-                             {template === t.name && <div className="absolute inset-0 bg-primary/20 flex items-center justify-center"><span className="material-symbols-outlined text-white text-2xl">check_circle</span></div>}
+                             {template === t.name && <div className="absolute inset-0 bg-primary/20 flex items-center justify-center"><CheckCircle2 className="size-8 text-white" /></div>}
                           </div>
                           <p className={`text-[9px] md:text-[10px] font-bold text-center ${template === t.name ? 'text-white' : 'text-text-secondary'}`}>{t.name}</p>
                        </div>
@@ -117,7 +130,7 @@ const CVEditorScreen: React.FC<CVEditorScreenProps> = ({ user, onNavigate }) => 
 
                <div className="space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary flex items-center gap-2">
-                     <span className="material-symbols-outlined text-sm">font_download</span> Typography
+                     <TypeIcon className="size-4" /> Typography
                   </h3>
                   <div className="space-y-4">
                      <div className="space-y-2">
