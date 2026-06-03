@@ -10,9 +10,54 @@ import {
   PhoneOff 
 } from 'lucide-react';
 import { Screen, User, InterviewConfig } from '../types';
-import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
+import { LiveServerMessage } from '@google/genai';
 import { floatTo16BitPCM, encodeBase64, decodeBase64, decodeAudioData } from '../services/geminiService';
 import { apiClient } from '../services/apiClient';
+
+class SimpleWebSocketSession {
+  private ws: WebSocket;
+
+  constructor(url: string, callbacks: { onopen: () => void, onmessage: (msg: any) => void, onclose: () => void, onerror: (err: any) => void }) {
+    this.ws = new WebSocket(url);
+    this.ws.onopen = callbacks.onopen;
+    this.ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        callbacks.onmessage(msg);
+      } catch (err) {
+        console.error("Failed to parse WebSocket message", err);
+      }
+    };
+    this.ws.onclose = callbacks.onclose;
+    this.ws.onerror = callbacks.onerror;
+  }
+
+  sendSetup(setupMsg: any) {
+    if (this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(setupMsg));
+    }
+  }
+
+  sendRealtimeInput(input: { media: { data: string, mimeType: string } }) {
+    if (this.ws.readyState === WebSocket.OPEN) {
+      const message = {
+        realtimeInput: {
+          mediaChunks: [
+            {
+              data: input.media.data,
+              mimeType: input.media.mimeType
+            }
+          ]
+        }
+      };
+      this.ws.send(JSON.stringify(message));
+    }
+  }
+
+  close() {
+    this.ws.close();
+  }
+}
 
 interface InterviewScreenProps {
   user: User | null;
@@ -206,10 +251,6 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
     setIsConnecting(true);
 
     try {
-      const configResponse = await apiClient.get('/ai/config');
-      const apiKey = configResponse.data.apiKey;
-      if (!apiKey) throw new Error("Could not retrieve Gemini API Key from server.");
-
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         video: { width: 640, height: 480, frameRate: 15 }
@@ -222,60 +263,75 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
       inputAudioCtxRef.current = inCtx;
       outputAudioCtxRef.current = outCtx;
 
-      const ai = new GoogleGenAI({ apiKey });
-      const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-        config: {
-          responseModalities: [Modality.AUDIO],
-          outputAudioTranscription: {},
-          inputAudioTranscription: {},
-          systemInstruction: `You are Sarah, Lead HR Manager. 
-          STRICT PATIENCE MANDATE: 
-          1. NEVER interrupt the candidate. 
-          2. WAIT 3 SECONDS after they finish speaking.
-          3. ROLE: ${config.role}. Language: ${config.language}.`,
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } }
-        },
-        callbacks: {
+      const wsUrl = `ws://localhost:8080/ws/interview/${user?.id || 'session'}`;
+
+      let wsSession: SimpleWebSocketSession;
+      const sessionPromise = new Promise<SimpleWebSocketSession>((resolve, reject) => {
+        wsSession = new SimpleWebSocketSession(wsUrl, {
           onopen: () => {
             if (!isMounted.current) return;
             setIsSessionActive(true);
             setIsConnecting(false);
-            
-            // Start Audio Processing
-            const source = inCtx.createMediaStreamSource(stream);
-            const processor = inCtx.createScriptProcessor(4096, 1, 1);
-            processor.onaudioprocess = (e) => {
-              if (isMutedRef.current || isPausedRef.current || !isMounted.current) return;
-              const pcm = floatTo16BitPCM(e.inputBuffer.getChannelData(0));
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ media: { data: encodeBase64(pcm), mimeType: 'audio/pcm;rate=16000' } });
-              });
-            };
-            source.connect(processor);
-            processor.connect(inCtx.destination);
 
-            // Start Video Processing
-            const vInterval = setInterval(() => {
-              if (isPausedRef.current || !videoRef.current || !canvasRef.current || !isMounted.current) {
-                 if (!isMounted.current) clearInterval(vInterval);
-                 return;
+            // Send initial setup message to configure Gemini Live session
+            const setupMsg = {
+              setup: {
+                model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } }
+                },
+                systemInstruction: {
+                  parts: [{
+                    text: `You are Sarah, Lead HR Manager. 
+                    STRICT PATIENCE MANDATE: 
+                    1. NEVER interrupt the candidate. 
+                    2. WAIT 3 SECONDS after they finish speaking.
+                    3. ROLE: ${config.role}. Language: ${config.language}.`
+                  }]
+                }
               }
-              const ctx = canvasRef.current.getContext('2d');
-              if (!ctx) return;
-              ctx.drawImage(videoRef.current, 0, 0, 320, 240);
-              const base64 = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ media: { data: base64, mimeType: 'image/jpeg' } });
-              });
-            }, 2000);
+            };
+            wsSession.sendSetup(setupMsg);
+            resolve(wsSession);
           },
           onmessage: handleServerMessage,
           onclose: () => setIsSessionActive(false),
-          onerror: (e) => console.error("Gemini Error:", e)
-        }
+          onerror: (e) => {
+            console.error("WebSocket Proxy Error:", e);
+            reject(e);
+          }
+        });
       });
       sessionPromiseRef.current = sessionPromise;
+
+      // Start Audio & Video Loops once WebSocket resolves
+      sessionPromise.then(session => {
+        // Start Audio Processing
+        const source = inCtx.createMediaStreamSource(stream);
+        const processor = inCtx.createScriptProcessor(4096, 1, 1);
+        processor.onaudioprocess = (e) => {
+          if (isMutedRef.current || isPausedRef.current || !isMounted.current) return;
+          const pcm = floatTo16BitPCM(e.inputBuffer.getChannelData(0));
+          session.sendRealtimeInput({ media: { data: encodeBase64(pcm), mimeType: 'audio/pcm;rate=16000' } });
+        };
+        source.connect(processor);
+        processor.connect(inCtx.destination);
+
+        // Start Video Processing
+        const vInterval = setInterval(() => {
+          if (isPausedRef.current || !videoRef.current || !canvasRef.current || !isMounted.current) {
+             if (!isMounted.current) clearInterval(vInterval);
+             return;
+          }
+          const ctx = canvasRef.current.getContext('2d');
+          if (!ctx) return;
+          ctx.drawImage(videoRef.current, 0, 0, 320, 240);
+          const base64 = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
+          session.sendRealtimeInput({ media: { data: base64, mimeType: 'image/jpeg' } });
+        }, 2000);
+      });
+
     } catch (err) {
       console.error("Join Session Error:", err);
       alert("Microphone/Camera access denied or connection failed.");
