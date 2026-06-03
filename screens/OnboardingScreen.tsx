@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Screen, User, InterviewConfig } from '../types';
 import { Logo } from '../constants';
-import { GoogleGenAI, Type } from '@google/genai';
+import { apiClient } from '../services/apiClient';
 
 interface OnboardingScreenProps {
   user: User | null;
@@ -44,34 +44,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
   const handleStartInterview = async () => {
     setIsFinalizing(true);
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-      if (!apiKey) throw new Error("An API Key must be set when running in a browser");
-      const ai = new GoogleGenAI({ apiKey });
-      const result = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: [{
-          role: 'user',
-          parts: [{ text: `Based on this interview setup conversation, extract the interview configuration in JSON format.
-          Conversation: ${JSON.stringify(messages)}` }]
-        }],
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              role: { type: Type.STRING },
-              experienceLevel: { type: Type.STRING },
-              techStack: { type: Type.ARRAY, items: { type: Type.STRING } },
-              focusAreas: { type: Type.ARRAY, items: { type: Type.STRING } },
-              duration: { type: Type.NUMBER },
-              language: { type: Type.STRING, description: "The language the interview should be conducted in (default: English)" }
-            },
-            required: ['role', 'experienceLevel', 'techStack', 'focusAreas', 'duration', 'language']
-          }
-        }
-      });
+      const response = await apiClient.post('/ai/onboarding/finalize', { messages });
+      const configData = response.data.analysis || {};
       
-      const configData = JSON.parse(result.text || '{}');
       const isElite = user?.plan === 'elite';
       const isPro = user?.plan === 'pro';
       
@@ -124,27 +99,13 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
     setIsTyping(true);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-      if (!apiKey) throw new Error("An API Key must be set when running in a browser");
-      const ai = new GoogleGenAI({ apiKey });
-      const contents = newMessages.map(m => ({
-        role: m.sender === 'ai' ? 'model' as const : 'user' as const,
-        parts: [{ text: m.text }]
-      }));
-
-      const result = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: contents,
-        config: {
-          systemInstruction: `You are Sarah, a helpful AI Interview Coach. Help ${user?.name} set up an interview.
-          COLLECT: 1. Role, 2. Experience Level, 3. Skills/Focus, 4. Duration, 5. Language.
-          PLAN LIMITS: ${user?.plan === 'elite' ? '60' : user?.plan === 'pro' ? '45' : '10'} minutes max.
-          IMPORTANT: Respond in the language the user is using if they switch to Spanish, French, etc., or confirm their chosen language.
-          Once all details are known, end with "Ready to start?" to trigger the button.`
-        }
+      const response = await apiClient.post('/ai/onboarding/chat', { 
+        messages: newMessages,
+        userName: user?.name,
+        userPlan: user?.plan
       });
 
-      const aiResponse = result.text || "I'm sorry, I didn't quite catch that.";
+      const aiResponse = response.data.text || "I'm sorry, I didn't quite catch that.";
       setMessages(prev => [...prev, { sender: 'ai', text: aiResponse }]);
 
       const lowerResp = aiResponse.toLowerCase();
@@ -155,7 +116,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ user, onNavigate })
       }
 
     } catch (err: any) {
-      console.error("Gemini Error:", err);
+      console.error("Onboarding chat error:", err);
       setMessages(prev => [...prev, { sender: 'ai', text: "I'm having a little trouble connecting. Could you repeat that?" }]);
     } finally {
       setIsTyping(false);

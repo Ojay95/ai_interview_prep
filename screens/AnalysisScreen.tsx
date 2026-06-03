@@ -10,9 +10,8 @@ import {
   ArrowRight, 
   Sparkles 
 } from 'lucide-react';
-import { Screen, User, VisualMetrics } from '../types';
-import { GoogleGenAI } from '@google/genai';
-import { cleanJsonString } from '../services/geminiService';
+import { Screen, User, VisualMetrics, InterviewConfig } from '../types';
+import { apiClient } from '../services/apiClient';
 import { jsPDF } from 'jspdf';
 import { Logo } from '../constants';
 
@@ -59,58 +58,31 @@ const AnalysisScreen: React.FC<AnalysisScreenProps> = ({ user, onNavigate }) => 
 
   const generateAnalysis = async (transcript: any[], targetRole: string) => {
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-      if (!apiKey) throw new Error("An API Key must be set when running in a browser");
-      const ai = new GoogleGenAI({ apiKey });
-      const chatHistory = transcript.map(m => `${m.sender}: ${m.text}`).join('\n');
-      
-      const prompt = `Act as an expert interview coach. Analyze the PROVIDED transcript for a ${targetRole} role.
-      Analyze ONLY the questions and answers that appear in the transcript.
-      Return JSON exactly in this format:
-      {
-        "overallScore": number (0-100),
-        "performanceTag": "Excellent" | "Professional" | "Needs Improvement",
-        "summary": "string",
-        "keyStrengths": ["string"],
-        "growthAreas": ["string"],
-        "scoreBreakdown": [
-           {"label": "Technical Knowledge", "value": number},
-           {"label": "Cultural Fit", "value": number},
-           {"label": "Problem Solving", "value": number},
-           {"label": "Communication Skills", "value": number},
-           {"label": "Confidence & Clarity", "value": number}
-        ],
-        "visualMetrics": {
-           "eyeContactScore": number,
-           "postureScore": number,
-           "energyLevel": "High",
-           "visualFeedback": "string"
-        },
-        "detailedAnalysis": [
-          {
-            "question": "string",
-            "userTranscript": "string",
-            "answerStatus": "Strong Answer",
-            "statusColor": "green",
-            "critique": "string",
-            "improvedAnswer": "string"
-          }
-        ]
-      }
+      const savedConfig = localStorage.getItem('pending_interview_config');
+      const config: InterviewConfig = savedConfig ? JSON.parse(savedConfig) : {
+        role: targetRole,
+        experienceLevel: 'Senior',
+        language: 'English',
+        techStack: [],
+        focusAreas: [],
+        duration: 15
+      };
 
-      TRANSCRIPT:
-      ---
-      ${chatHistory}
-      ---`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: { responseMimeType: 'application/json', temperature: 0.1 }
+      const response = await apiClient.post('/interviews/analyze', {
+        targetRole: config.role,
+        experienceLevel: config.experienceLevel,
+        language: config.language,
+        techStack: config.techStack,
+        focusAreas: config.focusAreas,
+        durationSeconds: config.duration * 60,
+        transcript: transcript.map(m => ({
+          sender: m.sender,
+          text: m.text,
+          time: m.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }))
       });
 
-      const data = JSON.parse(cleanJsonString(response.text));
-      setAnalysis(data);
+      setAnalysis(response.data.analysis);
     } catch (err) {
       console.error(err);
     } finally {

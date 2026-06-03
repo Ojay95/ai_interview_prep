@@ -12,6 +12,7 @@ import {
 import { Screen, User, InterviewConfig } from '../types';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { floatTo16BitPCM, encodeBase64, decodeBase64, decodeAudioData } from '../services/geminiService';
+import { apiClient } from '../services/apiClient';
 
 interface InterviewScreenProps {
   user: User | null;
@@ -205,6 +206,10 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
     setIsConnecting(true);
 
     try {
+      const configResponse = await apiClient.get('/ai/config');
+      const apiKey = configResponse.data.apiKey;
+      if (!apiKey) throw new Error("Could not retrieve Gemini API Key from server.");
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         video: { width: 640, height: 480, frameRate: 15 }
@@ -217,8 +222,6 @@ const InterviewScreen: React.FC<InterviewScreenProps> = ({ user, onNavigate }) =
       inputAudioCtxRef.current = inCtx;
       outputAudioCtxRef.current = outCtx;
 
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-      if (!apiKey) throw new Error("An API Key must be set when running in a browser");
       const ai = new GoogleGenAI({ apiKey });
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',

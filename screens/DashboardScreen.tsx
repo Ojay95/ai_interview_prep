@@ -23,6 +23,7 @@ import {
   Eye 
 } from 'lucide-react';
 import { Screen, User } from '../types';
+import { apiClient } from '../services/apiClient';
 
 interface DashboardScreenProps {
   user: User | null;
@@ -33,52 +34,137 @@ interface DashboardScreenProps {
 const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onLogout }) => {
   const [interviewsLeft, setInterviewsLeft] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [recentSessions, setRecentSessions] = useState<any[]>([]);
+  const [streak, setStreak] = useState(3);
+  const [isLoading, setIsLoading] = useState(true);
   
   const maxInterviews = user?.plan === 'elite' ? 100 : user?.plan === 'pro' ? 40 : 3;
   const isFree = user?.plan === 'free';
 
   useEffect(() => {
-    // For demo purposes, we still allow local tracking, but in prod this would come from API
+    // Local usage quota fallback
     try {
         const usage = JSON.parse(localStorage.getItem(`usage_${user?.id}`) || '{"count": 0, "date": ""}');
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInterviewsLeft(Math.max(0, maxInterviews - usage.count));
     } catch {
         setInterviewsLeft(3);
     }
   }, [user, maxInterviews]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const statsRes = await apiClient.get('/analytics/dashboard');
+        setDashboardStats(statsRes.data);
+        if (statsRes.data?.currentStreak !== undefined) {
+          setStreak(statsRes.data.currentStreak);
+        }
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+      }
+
+      try {
+        const historyRes = await apiClient.get('/interviews/history');
+        setRecentSessions(historyRes.data || []);
+      } catch (err) {
+        console.error("Error fetching interview history:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [user]);
+
   const handleStartInterview = (targetScreen: Screen) => {
     if (interviewsLeft <= 0) {
       onNavigate(Screen.Subscription);
     } else {
+      localStorage.removeItem('last_interview_analysis_report');
       onNavigate(targetScreen);
     }
     setIsSidebarOpen(false);
   };
 
-  const recentSessions = [
-    { 
-      role: 'Senior Frontend Engineer', 
-      type: 'Technical Round', 
-      date: 'Oct 24, 2023', 
-      duration: '45 mins',
-      score: 8.5, 
-      scoreMax: 10,
-      color: 'bg-green-500',
-      icon: <Code2 className="size-5" />
-    },
-    { 
-      role: 'Product Manager', 
-      type: 'Product Sense', 
-      date: 'Oct 20, 2023', 
-      duration: '30 mins',
-      score: 6.2, 
-      scoreMax: 10,
-      color: 'bg-yellow-500',
-      icon: <Layout className="size-5" />
+  const handleViewSessionReport = async (sessionId: number, roleName: string) => {
+    try {
+      const response = await apiClient.get(`/interviews/${sessionId}`);
+      if (response.data?.analysis) {
+        localStorage.setItem('last_interview_analysis_report', JSON.stringify(response.data.analysis));
+        localStorage.setItem('last_interview_role', roleName);
+        onNavigate(Screen.Analysis);
+      }
+    } catch (err) {
+      console.error("Failed to load session report:", err);
     }
+  };
+
+  const getSessionIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'code':
+        return <Code2 className="size-5" />;
+      case 'record_voice_over':
+        return <Mic className="size-5" />;
+      case 'hub':
+        return <Layout className="size-5" />;
+      default:
+        return <Brain className="size-5" />;
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'bg-green-500';
+    if (score >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full bg-[#0f111a] text-white items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <div className="bg-primary/20 p-4 rounded-3xl text-primary border border-primary/10">
+            <Brain className="size-16 animate-bounce" />
+          </div>
+          <p className="text-text-secondary text-sm font-semibold tracking-wide uppercase">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalPractice = dashboardStats?.totalPracticeCount ?? 0;
+  const avgScore = dashboardStats?.averageScore != null ? Math.round(dashboardStats.averageScore) : 0;
+  const strongest = dashboardStats?.strongestCategory || 'N/A';
+  const improvement = dashboardStats?.improvementArea || 'N/A';
+
+  const statsCards = [
+    { label: 'Total Practice', val: totalPractice.toString(), inc: 'All-time', color: 'text-primary', icon: <CheckSquare className="size-5" /> },
+    { label: 'Avg. Score', val: avgScore > 0 ? `${avgScore}%` : 'N/A', inc: avgScore >= 80 ? 'Top 10%' : avgScore >= 60 ? 'Above Avg' : 'Needs Practice', color: 'text-purple-400', icon: <BarChart3 className="size-5" /> },
+    { label: 'Strongest', val: strongest, inc: 'Stable', color: 'text-green-500', icon: <ThumbsUp className="size-5" /> },
+    { label: 'Improvement', val: improvement, inc: 'Focus Area', color: 'text-orange-500', icon: <Target className="size-5" /> }
   ];
+
+  const points = dashboardStats?.performanceTrend || [];
+  
+  // Calculate SVG path with scaling to prevent clipping
+  let pathD = '';
+  if (points.length > 0) {
+    if (points.length === 1) {
+      const score = Math.max(0, Math.min(100, points[0].score));
+      const y = 90 - (score * 0.8);
+      pathD = `M 0,${y} L 100,${y}`;
+    } else {
+      pathD = points.map((p: any, i: number) => {
+        const x = (i / (points.length - 1)) * 100;
+        const score = Math.max(0, Math.min(100, p.score));
+        const y = 90 - (score * 0.8); // 100 maps to 10, 0 maps to 90
+        return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
+      }).join(' ');
+    }
+  } else {
+    // Fallback path
+    pathD = "M 0,80 L 20,70 L 40,75 L 60,60 L 80,50 L 100,45";
+  }
 
   return (
     <div className="flex h-screen w-full bg-[#0f111a] text-white overflow-hidden font-display">
@@ -207,7 +293,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-2 leading-tight">Ready to ace it, {user?.name?.split(' ')[0] || 'Alex'}?</h2>
             <div className="flex items-center gap-2 text-text-secondary">
               <Flame className="size-5 text-orange-500" fill="currentColor" />
-              <p className="text-sm font-medium">You're on a 3-day streak! Keep going.</p>
+              <p className="text-sm font-medium">You're on a {streak}-day streak! Keep going.</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
@@ -237,12 +323,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
 
         {/* Performance Grid */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-           {[
-             { label: 'Total Practice', val: '12', inc: '+2 wk', color: 'text-primary', icon: <CheckSquare className="size-5" /> },
-             { label: 'Avg. Score', val: '78', inc: 'Top 20%', color: 'text-purple-400', icon: <BarChart3 className="size-5" /> },
-             { label: 'Strongest', val: 'System Design', inc: 'Stable', color: 'text-green-500', icon: <ThumbsUp className="size-5" /> },
-             { label: 'Improvement', val: 'Behavioral', inc: 'Critical', color: 'text-orange-500', icon: <Target className="size-5" /> }
-           ].map((stat) => (
+           {statsCards.map((stat) => (
              <div key={stat.label} className="bg-[#1c212b] p-4 md:p-8 rounded-2xl md:rounded-[32px] border border-white/5 shadow-xl space-y-4 md:space-y-6">
                 <div className="flex items-center justify-between">
                    <div className={`size-8 md:size-10 rounded-lg bg-white/5 ${stat.color} flex items-center justify-center`}>
@@ -272,11 +353,17 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                 </div>
              </div>
              <div className="flex-1 min-h-[200px] md:min-h-[280px] w-full flex flex-col justify-end gap-6 relative z-10 pb-4">
-                <svg className="w-full h-full absolute inset-0 overflow-visible" preserveAspectRatio="none">
-                   <path d="M0,200 C150,220 300,160 450,180 S750,120 900,100 L1200,90" fill="none" stroke="#194ce6" strokeWidth="3" />
+                <svg className="w-full h-[80%] absolute inset-x-0 top-0 overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                   <path d={pathD} fill="none" stroke="#194ce6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <div className="mt-auto pt-4 border-t border-white/5 flex justify-between text-[10px] md:text-xs font-bold text-text-secondary uppercase tracking-[0.2em]">
-                   <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+                   {points.length > 0 ? (
+                     points.map((p: any, i: number) => (
+                       <span key={i}>{p.date}</span>
+                     ))
+                   ) : (
+                     <><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span></>
+                   )}
                 </div>
              </div>
           </div>
@@ -314,35 +401,46 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onNavigate, onL
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {recentSessions.map((session, i) => (
-                  <tr key={i} className="group hover:bg-white/5 transition-all">
-                    <td className="py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="size-8 md:size-10 bg-black/20 text-text-secondary rounded-lg flex items-center justify-center shrink-0 border border-white/5">
-                           {session.icon}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm md:text-base font-bold text-white truncate">{session.role}</span>
-                          <span className="text-xs text-text-secondary mt-0.5 truncate">{session.type}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-6 text-xs md:text-sm text-text-secondary font-bold">{session.date}</td>
-                    <td className="py-6">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm md:text-base font-black tabular-nums">{session.score}</span>
-                        <div className="h-1 w-16 md:w-24 bg-white/5 rounded-full overflow-hidden shrink-0">
-                           <div className={`h-full ${session.color} rounded-full`} style={{ width: `${(session.score/session.scoreMax)*100}%` }}></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-6 text-right">
-                      <button className="size-8 md:size-10 rounded-lg bg-black/20 text-text-secondary hover:text-white flex items-center justify-center ml-auto border border-white/5">
-                        <Eye className="size-5" />
-                      </button>
+                {recentSessions.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-text-secondary font-medium">
+                      No interview sessions recorded yet. Start your first session above!
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  recentSessions.map((session, i) => (
+                    <tr key={i} className="group hover:bg-white/5 transition-all">
+                      <td className="py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="size-8 md:size-10 bg-black/20 text-text-secondary rounded-lg flex items-center justify-center shrink-0 border border-white/5">
+                             {getSessionIcon(session.icon)}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm md:text-base font-bold text-white truncate">{session.role}</span>
+                            <span className="text-xs text-text-secondary mt-0.5 truncate">{session.type}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-6 text-xs md:text-sm text-text-secondary font-bold">{session.date}</td>
+                      <td className="py-6">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm md:text-base font-black tabular-nums">{Math.round(session.score)}</span>
+                          <div className="h-1 w-16 md:w-24 bg-white/5 rounded-full overflow-hidden shrink-0">
+                             <div className={`h-full ${getScoreColor(session.score)} rounded-full`} style={{ width: `${(session.score / (session.scoreMax || 100)) * 100}%` }}></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-6 text-right">
+                        <button 
+                          onClick={() => handleViewSessionReport(session.id, session.role)}
+                          className="size-8 md:size-10 rounded-lg bg-black/20 text-text-secondary hover:text-white flex items-center justify-center ml-auto border border-white/5 active:scale-95 transition-all"
+                        >
+                          <Eye className="size-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -3,7 +3,7 @@ import axios, { AxiosError } from 'axios';
 
 // Safely access environment variables via polyfilled process
 const env = (typeof window !== 'undefined' && (window as any).process?.env) || {};
-const IS_DEMO_MODE = env.VITE_DEMO_MODE === 'true' || true; 
+const IS_DEMO_MODE = env.VITE_DEMO_MODE === 'true'; 
 const BASE_URL = env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 

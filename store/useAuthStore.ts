@@ -10,6 +10,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   bypassAuth: () => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -43,12 +44,57 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const response = await apiClient.post('/auth/login', { email, password });
-          const { user, token } = response.data;
-          set({ user, token, isLoading: false });
-          toast.success('Successfully logged in');
+          const { user: rawUser, token } = response.data;
+          const userObj: User = {
+            id: rawUser.id,
+            email: rawUser.email,
+            name: `${rawUser.firstName || ''} ${rawUser.lastName || ''}`.trim() || rawUser.email.split('@')[0],
+            plan: (rawUser.plan || 'free').toLowerCase() as 'free' | 'pro' | 'elite',
+            avatar: `https://i.pravatar.cc/150?u=${rawUser.email}`
+          };
+          localStorage.setItem('auth_token', token);
+          set({ user: userObj, token, isLoading: false });
+          toast.success(`Welcome back, ${userObj.name}!`);
         } catch (error) {
           set({ isLoading: false });
           if (!IS_DEMO_MODE) toast.error('Invalid credentials');
+          throw error;
+        }
+      },
+
+      register: async (firstName, lastName, email, password) => {
+        set({ isLoading: true });
+        try {
+          if (IS_DEMO_MODE) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            const mockUser: User = {
+              id: '1',
+              email: email,
+              name: `${firstName} ${lastName}`.trim() || email.split('@')[0],
+              plan: 'free',
+              avatar: `https://i.pravatar.cc/150?u=${email}`
+            };
+            set({ user: mockUser, token: 'mock-jwt-token-123', isLoading: false });
+            toast.success(`Welcome, ${mockUser.name}!`);
+            return;
+          }
+
+          const response = await apiClient.post('/auth/register', { firstName, lastName, email, password });
+          const { user: rawUser, token } = response.data;
+          const userObj: User = {
+            id: rawUser.id,
+            email: rawUser.email,
+            name: `${rawUser.firstName || ''} ${rawUser.lastName || ''}`.trim() || rawUser.email.split('@')[0],
+            plan: (rawUser.plan || 'free').toLowerCase() as 'free' | 'pro' | 'elite',
+            avatar: `https://i.pravatar.cc/150?u=${rawUser.email}`
+          };
+          localStorage.setItem('auth_token', token);
+          set({ user: userObj, token, isLoading: false });
+          toast.success(`Successfully registered! Welcome, ${userObj.name}`);
+        } catch (error: any) {
+          set({ isLoading: false });
+          const errMsg = error.response?.data?.message || 'Registration failed';
+          toast.error(errMsg);
           throw error;
         }
       },

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LayoutGrid, Eye } from 'lucide-react';
+import { LayoutGrid, Eye, Loader2 } from 'lucide-react';
 import { Screen, User } from '../types';
 import { Logo } from '../constants';
 import { useAuthStore } from '../store/useAuthStore';
@@ -12,21 +12,23 @@ interface SignUpScreenProps {
   onLogin: (user: User) => void;
 }
 
-const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
+const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate }) => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { bypassAuth } = useAuthStore();
+  const { register, bypassAuth, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin({
-      id: Math.random().toString(),
-      email,
-      name: email.split('@')[0],
-      plan: 'free'
-    });
-    navigate(ROUTES.DASHBOARD);
+    if (!firstName || !lastName || !email || !password) return;
+    try {
+      await register(firstName, lastName, email, password);
+      navigate(ROUTES.DASHBOARD);
+    } catch (error) {
+      console.error("Registration failed", error);
+    }
   };
 
   const handleDemoLogin = () => {
@@ -69,6 +71,32 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-white" htmlFor="firstName">First Name</label>
+                <input 
+                  className="w-full rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-surface-dark h-12 px-4 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none" 
+                  id="firstName" 
+                  placeholder="John" 
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-white" htmlFor="lastName">Last Name</label>
+                <input 
+                  className="w-full rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-surface-dark h-12 px-4 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none" 
+                  id="lastName" 
+                  placeholder="Doe" 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-white" htmlFor="email">Email Address</label>
               <input 
@@ -78,6 +106,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
@@ -91,6 +120,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                   required
                 />
                 <button className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-secondary hover:text-slate-600 dark:hover:text-white" type="button">
@@ -100,8 +130,12 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigate, onLogin }) => {
               <p className="text-xs text-slate-500 dark:text-text-secondary mt-1">Must be at least 8 characters long.</p>
             </div>
             <div className="flex flex-col gap-3">
-              <button type="submit" className="w-full flex items-center justify-center rounded-xl h-12 px-4 bg-primary hover:bg-primary-hover text-white text-base font-bold shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
-                Get Started Free
+              <button type="submit" disabled={isLoading} className="w-full flex items-center justify-center rounded-xl h-12 px-4 bg-primary hover:bg-primary-hover text-white text-base font-bold shadow-lg shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-75">
+                {isLoading ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  'Get Started Free'
+                )}
               </button>
               <button 
                 type="button"

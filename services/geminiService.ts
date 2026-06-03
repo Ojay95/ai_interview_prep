@@ -1,5 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
+import { apiClient } from "./apiClient";
 
 // ==========================================
 // 1. CONFIGURATION & TYPES
@@ -114,25 +115,8 @@ function safeJsonParse<T>(jsonString: string, fallback: T): T {
 
 export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResult | { error: string }> => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-    if (!apiKey) throw new Error("An API Key must be set when running in a browser");
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: `Analyze the following Job Description and return a JSON object with: roleName (string), keySkills (string array), recommendedFocusAreas (string array), experienceLevel (string). \n\nJD: "${jd}"` }] }],
-      config: { 
-        responseMimeType: 'application/json',
-        temperature: 0.1 
-      }
-    });
-
-    return safeJsonParse<JobAnalysisResult>(response.text || "{}", {
-      roleName: "Analysis Failed",
-      keySkills: [],
-      recommendedFocusAreas: ["Retry Analysis"],
-      experienceLevel: "Unknown"
-    });
-
+    const response = await apiClient.post('/ai/analyze-jd', { jd });
+    return response.data.analysis;
   } catch (error) {
     console.error("Error analyzing job description:", error);
     return { error: "Failed to analyze" }; 
@@ -141,25 +125,8 @@ export const analyzeJobDescription = async (jd: string): Promise<JobAnalysisResu
 
 export const extractRoleFromResume = async (resumeText: string): Promise<string> => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-    if (!apiKey) throw new Error("An API Key must be set when running in a browser");
-    const ai = new GoogleGenAI({ apiKey });
-    
-    const prompt = `Based on the following resume text, identify the most appropriate and common professional job title for this person. 
-    Return ONLY the job title as a string. No other text.
-    
-    RESUME:
-    "${resumeText}"`;
-
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: { 
-        temperature: 0.1
-      }
-    });
-
-    return response.text.trim() || "Software Engineer";
+    const response = await apiClient.post('/ai/extract-role', { resumeText });
+    return response.data.role || "Software Engineer";
   } catch (error) {
     console.error("Error extracting role from resume:", error);
     return "Software Engineer";
@@ -168,52 +135,8 @@ export const extractRoleFromResume = async (resumeText: string): Promise<string>
 
 export const analyzeResumeMatch = async (resumeText: string, jdText: string): Promise<ResumeMatchResult> => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (window as any).GEMINI_API_KEY;
-    if (!apiKey) throw new Error("An API Key must be set when running in a browser");
-    const ai = new GoogleGenAI({ apiKey });
-    
-    const prompt = `Act as an expert technical recruiter. Analyze the following Resume against the Job Description. 
-    Your goal is to provide a brutal, honest, and highly actionable alignment report.
-    
-    Return a strict JSON object with these EXACT keys:
-    - matchScore: (number 0-100) representing how well the candidate fits the requirements.
-    - matchedKeywords: (string array) specific technical and soft skills present in both.
-    - missingKeywords: (string array) critical requirements from the JD that are totally missing or weak in the resume.
-    - overallFeedback: (string) a concise summary of the alignment.
-    - resumeSummary: (string) A professional 2-3 sentence summary of the candidate's profile based on their resume.
-    - verdict: (string) A short summary tag (e.g., 'Highly Qualified', 'Strong Potential', 'Significant Gaps', 'Underqualified').
-    - shouldApply: (string) A clear recommendation on whether to apply and why.
-    - practiceAreas: (string array) 3-5 specific topics the candidate MUST practice for an interview.
-    - recommendations: (array of objects { title, impact, description, suggestion, suggestedBullet }) specific, high-impact edits to the resume. 
-      - suggestedBullet: A perfectly formatted, high-impact bullet point (starting with an action verb) that the candidate can copy and paste directly into their resume to address this recommendation.
-    
-    RESUME:
-    "${resumeText}"
-    
-    JOB DESCRIPTION:
-    "${jdText}"`;
-
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: { 
-        responseMimeType: 'application/json',
-        temperature: 0.2
-      }
-    });
-
-    return safeJsonParse<ResumeMatchResult>(response.text || "{}", {
-      matchScore: 0,
-      matchedKeywords: [],
-      missingKeywords: [],
-      overallFeedback: "We couldn't generate a valid analysis. Please try again.",
-      resumeSummary: "No summary available.",
-      verdict: "Error in Analysis",
-      shouldApply: "Retry the analysis with more content.",
-      practiceAreas: ["General Technical Prep", "System Design", "Behavioral Alignment"],
-      recommendations: []
-    });
-
+    const response = await apiClient.post('/cv/analyze-text', { resumeText, jobDescription: jdText });
+    return response.data.analysis;
   } catch (error) {
     console.error("Error matching resume:", error);
     return {
