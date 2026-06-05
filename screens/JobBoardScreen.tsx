@@ -24,6 +24,21 @@ interface JobBoardScreenProps {
   onNavigate: (screen: Screen) => void;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08
+    }
+  }
+} as const;
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } }
+} as const;
+
 export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) => {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -212,7 +227,12 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
             </div>
 
             {/* Job List */}
-            <div className="space-y-6">
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="space-y-6"
+            >
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-xl font-black tracking-tight text-white">
                   {searchQuery ? `Results for "${searchQuery}"` : derivedRole ? `Recommended for ${derivedRole}` : 'Recommended for you'}
@@ -232,9 +252,12 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
               {jobs.map((job) => (
                 <motion.div
                   key={job.id}
+                  variants={itemVariants}
                   layoutId={job.id}
                   onClick={() => setSelectedJob(job)}
                   className="bg-[#1c212b] border border-white/5 rounded-2xl lg:rounded-[32px] p-5 lg:p-8 hover:border-primary/30 hover:bg-white/[0.02] transition-all cursor-pointer group relative overflow-hidden shadow-xl"
+                  whileHover={{ scale: 1.01, borderColor: 'rgba(25, 76, 230, 0.4)' }}
+                  whileTap={{ scale: 0.99 }}
                 >
                   {job.matchScore && (
                     <div className="absolute top-0 right-0 bg-primary text-white px-4 lg:px-6 py-1.5 lg:py-2 rounded-bl-xl lg:rounded-bl-2xl text-[8px] lg:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
@@ -337,7 +360,7 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
                   </button>
                 </div>
               )}
-            </div>
+            </motion.div>
           </div>
         </div>
       </main>
@@ -357,7 +380,12 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
               layoutId={selectedJob.id}
               className="relative w-full max-w-3xl bg-[#1c212b] rounded-3xl lg:rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/10"
             >
-              <div className="p-6 sm:p-8 lg:p-10 overflow-y-auto custom-scrollbar">
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="p-6 sm:p-8 lg:p-10 overflow-y-auto custom-scrollbar"
+              >
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 lg:mb-10">
                   <div className="flex gap-4 lg:gap-6">
                     <div className="w-16 h-16 lg:w-20 lg:h-20 bg-white/5 rounded-2xl lg:rounded-3xl flex items-center justify-center flex-shrink-0 border border-white/5">
@@ -428,7 +456,7 @@ export const JobBoardScreen: React.FC<JobBoardScreenProps> = ({ onNavigate }) =>
                     </ul>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               <div className="p-6 lg:p-10 bg-white/5 border-t border-white/10 flex flex-col sm:flex-row items-center gap-4 lg:gap-6">
                 <a 
