@@ -152,3 +152,31 @@ export const analyzeResumeMatch = async (resumeText: string, jdText: string): Pr
     };
   }
 };
+
+export interface OptimizationResult {
+  optimizedResumeMarkdown: string;
+  changelog: string[];
+}
+
+export const optimizeResume = async (resumeText: string, jdText: string): Promise<OptimizationResult> => {
+  const env = (typeof window !== 'undefined' && (window as any).process?.env) || {};
+  const IS_DEMO_MODE = env.VITE_DEMO_MODE === 'true';
+  
+  if (IS_DEMO_MODE) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          optimizedResumeMarkdown: `# Optimized Resume\n\n## Professional Summary\nResult-driven Systems Architect with extensive experience in cloud infrastructure, container clustering, and caching systems. Highly competent in designing high-throughput messaging interfaces and automated failover pipelines.\n\n## Experience\n\n### Lead Cloud Architect • TechFlow Solutions (2020 - Present)\n* **Engineered multi-region failover cluster** reducing database recovery downtime by 82% during critical outages.\n* **Architected high-throughput message bus** processing 12B+ events daily, optimizing partition distribution.\n* **Integrated distributed Redis caching clusters**, maintaining latencies under 45ms and eliminating write lock bottlenecks.\n* **Configured automated operators** with custom metric real-time alerts, reducing cloud resource compute expenditures by 28%.\n\n## Core Competencies\n* **Infrastructure**: Kubernetes, AWS, Terraform, Docker, Redis\n* **Methodologies**: STAR alignment, Cloud Architecture, Cost Optimization, High Availability`,
+          changelog: [
+            "Rewrote experience bullets to highlight quantified business impact (downtime reduced by 82%, 12B+ events/day, 28% cost reduction) in STAR format.",
+            "Naturally integrated missing keywords identified in matching analysis: Redis, Kubernetes, cost optimization, failover.",
+            "Restructured professional summary to align with senior-level candidate expectations."
+          ]
+        });
+      }, 1500);
+    });
+  }
+
+  const response = await apiClient.post('/cv/optimize', { resumeText, jobDescription: jdText });
+  return response.data;
+};
